@@ -1,0 +1,3 @@
+pyyaml >= 3.10
+markdown >= 2.4
+jinja2
