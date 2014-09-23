@@ -2,6 +2,7 @@
 import yaml
 import inspect
 
+
 class YAMLObjectInit(yaml.YAMLObject):
 
     """

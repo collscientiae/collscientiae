@@ -18,7 +18,9 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
         el.text = '#' + m.group(2)
         return el
 
+
 class KnowlTagPatternWithTitle(markdown.inlinepatterns.Pattern):
+
     def handleMatch(self, m):
         tokens = m.group(2).split("|")
         kid = tokens[0].strip()
