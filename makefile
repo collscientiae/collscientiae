@@ -1,13 +1,6 @@
-SOURCE=src
-TARGET=www
-
-.PHONY = render clean
-
-render:
-	python -c "import sage.newdoc; sage.newdoc.Renderer('${SOURCE}', '${TARGET}').render()"
+.PHONY = clean style
 
 clean:
-	$(RM) -r ${TARGET}
 	find sage/newdoc -name "*.pyc" -delete
 
 style:
