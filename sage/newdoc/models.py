@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 import yaml
-
+import inspect
 
 class YAMLObjectInit(yaml.YAMLObject):
 
@@ -18,7 +18,21 @@ class YAMLObjectInit(yaml.YAMLObject):
 
     @classmethod
     def from_yaml(cls, loader, node):
+        # get expected fields and throw a proper exception if a field is missing
+        argspec = inspect.getargspec(cls.__init__)
+        expected = argspec.args
+        if argspec.defaults is not None:
+            # getting rid of arguments with defaults
+            expected = expected[:-len(argspec.defaults)]
+        expected.remove("self")
+        # this is from the usual yaml loader
         fields = loader.construct_mapping(node, deep=True)
+        # continuing to check keyword arguments
+        actual = set(fields.keys())
+        for arg in expected:
+            if arg not in actual:
+                raise KeyError("Missing Data: '%s' missing." % arg)
+        # calling the class constructor properly
         return cls(**fields)
 
 
