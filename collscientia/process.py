@@ -54,7 +54,9 @@ class Processor(object):
         md.inlinePatterns.add('mathjax$$', IgnorePattern(r'(?<![\\])(\$\$.+?\$\$)'), '<escape')
         md.inlinePatterns.add('mathjax\\(', IgnorePattern(r'(\\\(.+?\\\))'), '<escape')
         md.inlinePatterns.add('mathjax\\[', IgnorePattern(r'(\\\[.+?\\\])'), '<escape')
-        # double `` backtick `` for ASCIIMath -- hope this doesn't confuse with <code> single backticks
+
+        # double `` backtick `` for ASCIIMath
+        # hope this doesn't confuse with <code> single backticks
         md.inlinePatterns.add('mathjax``', IgnorePattern(r'(?<![\\`])(``.+?``)'), '<escape')
 
         # Tell markdown to turn hashtags into search urls

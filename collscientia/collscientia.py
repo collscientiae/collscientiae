@@ -44,11 +44,13 @@ class Renderer(object):
                 assert isinstance(d, Document)
                 print "   -", d.id
                 if hasattr(d, "content") and d.content is not None:
+                    self.db.add(d)
                     for c in d.content:
                         if isinstance(c, Code):
                             print " code:", c
                         else:
                             print "    ", self.processor.process(c)
+
         except KeyError as ke:
             raise KeyError(ke.message + " (in %s)" % filepath)
 
