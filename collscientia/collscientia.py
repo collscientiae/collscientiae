@@ -57,11 +57,13 @@ class Renderer(object):
     def build_db(self):
         self.db = DB()
 
-        from os.path import join
+        from os.path import join, exists
         from os import walk
 
         for doc_module in self.config["modules"]:
             doc_dir = join(self.src, doc_module)
+            assert exists(doc_dir), \
+                "Module '%s' does not exist." % doc_dir
             for path, _, filenames in walk(doc_dir):
                 for fn in filenames:
                     filepath = join(path, fn)

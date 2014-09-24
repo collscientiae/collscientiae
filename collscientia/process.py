@@ -65,7 +65,7 @@ class Processor(object):
 
         # Tells markdown to process "wikistyle" knowls with optional title
         # should cover {{ KID }} and {{ KID | title }}
-        knowltagtitle_regex = r'knowl::([^:]+):'
+        knowltagtitle_regex = r'knowl\[\[([^\]]+)\]\]'
         md.inlinePatterns.add('knowltagtitle', KnowlTagPatternWithTitle(knowltagtitle_regex), '<escape')
 
     def process(self, content, target="html"):
