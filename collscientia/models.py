@@ -1,9 +1,11 @@
 # -*- coding: utf8 -*-
 import yaml
 import inspect
+import re
+namespace_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]+$")
 
 
-class YAMLObjectInit(yaml.YAMLObject):
+class YAMLObjectCallingInit(yaml.YAMLObject):
 
     """
     This overrides the :meth:`yaml.YAMLObject.from_from_yaml` method in such a way,
@@ -37,14 +39,14 @@ class YAMLObjectInit(yaml.YAMLObject):
         return cls(**fields)
 
 
-class DocumentationModule(YAMLObjectInit):
+class DocumentationModule(YAMLObjectCallingInit):
     yaml_tag = '!documentation'
 
     def __str__(self):
         return str(filter(lambda k_v: not k_v[0].startswith("_"), self.__dict__.iteritems()))
 
 
-class Code(YAMLObjectInit):
+class Code(YAMLObjectCallingInit):
     yaml_tag = "!code"
 
     def __init__(self, input, output=None):
@@ -58,7 +60,7 @@ class Code(YAMLObjectInit):
         return "input:\n%s\noutput: %s" % (self.input, self.output)
 
 
-class Section(YAMLObjectInit):
+class Section(YAMLObjectCallingInit):
     yaml_tag = '!section'
 
     def __init__(self, title, text):
@@ -69,30 +71,46 @@ class Section(YAMLObjectInit):
         return "Section %s\n%s" % (self.title, self.text)
 
 
-class Document(YAMLObjectInit):
+class Document(YAMLObjectCallingInit):
 
-    def __init__(self, id, title, subtitle=None,
-                 abstract=None,
-                 area=None, content=None,
+    def __init__(self, id, title,
+                 subtitle=None, abstract=None,
+                 tags=None, content=None,
                  seealso=None):
         self.id = id
+        self._ns = None
         self.title = title
         self.subtitle = subtitle
         self.abstract = abstract
-        if isinstance(area, (list, tuple)):
-            self.area = area
-        else:
-            self.area = [area]
-        assert content is None or isinstance(content, list)
-        self.content = content
         self.seealso = seealso
+
+        if tags is not None:
+            if not isinstance(tags, (list, tuple)):
+                tags = [tags]
+        self.tags = tags
+
+        if content is not None:
+            if not isinstance(content, (list, tuple)):
+                content = [content]
+        self.content = content
+
+    @property
+    def namespace(self):
+        assert self._ns is not None
+        return self._ns
+
+    @namespace.setter
+    def namespace(self, ns):
+        assert self._ns is None, "Namespace can only be set once"
+        assert namespace_pattern.match(ns) is not None
+        self._ns = ns
 
 
 class Plot(Document):
     yaml_tag = "!plot"
 
-    def __init__(self, code, **kwargs):
-        self.code = code
+    def __init__(self, plot, **kwargs):
+        self.plot = plot
         Document.__init__(self, **kwargs)
 
 

@@ -2,6 +2,9 @@
 
 import markdown
 import jinja2
+import re
+
+knowl_id_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_.]+$")
 
 
 class IgnorePattern(markdown.inlinepatterns.Pattern):
@@ -24,13 +27,19 @@ class KnowlTagPatternWithTitle(markdown.inlinepatterns.Pattern):
     def handleMatch(self, m):
         tokens = m.group(2).split("|")
         kid = tokens[0].strip()
+        kidsplit = kid.split("::")
+        assert knowl_id_pattern.match(kidsplit[-1]), "Knowl ID '%s' invalid" % kidsplit[-1]
+        assert 1 <= len(kidsplit) <= 2
+        if len(kidsplit) == 2:
+            from models import namespace_pattern
+            assert namespace_pattern.match(kidsplit[0])
         if len(tokens) > 1:
             t = ''.join(tokens[1:])
             return "{{ KNOWL('%s', title='%s') }}" % (kid, t.strip())
         return "{{ KNOWL('%s') }}" % kid
 
 
-class Processor(object):
+class ContentProcessor(object):
 
     """
     The one and only purpose of this Transformer class is to
@@ -41,7 +50,8 @@ class Processor(object):
     In the future, it might also be able to transform to LaTeX or PDF.
     """
 
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
         self.md = md = markdown.Markdown(
             extensions=['markdown.extensions.toc',
                         'markdown.extensions.extra',

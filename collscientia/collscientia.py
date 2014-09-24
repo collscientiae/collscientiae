@@ -1,25 +1,19 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
 from os.path import abspath, normpath, isdir, join
-from .db import DB
-from .models import Code, Document
-from .process import Processor
+from collscientia.models import Code
 
-
-def get_yaml(path, all=True):
-    import yaml
-    #import codecs
-    #stream = codecs.open(path, "r", "utf8")
-    stream = open(path, "r")
-    if all:
-        return yaml.load_all(stream)
-    else:
-        return yaml.load(stream)
+from collscientia.utils import get_yaml
+from .db import DB, DuplicateDocumentError
+from .models import Document
+from .process import ContentProcessor
+from .utils import create_logger
 
 
 class Renderer(object):
 
     def __init__(self, src, targ):
+        self.logger = logger = create_logger()
 
         self.src = abspath(normpath(src))
         self.targ = abspath(normpath(targ))
@@ -27,7 +21,8 @@ class Renderer(object):
         if not isdir(self.src):
             raise ValueError("src must be a directory")
 
-        self.processor = Processor()
+        self.processor = ContentProcessor(logger)
+        self.db = DB(logger)
 
         self.config = self.read_config()
 
@@ -35,41 +30,42 @@ class Renderer(object):
         config_fn = join(self.src, "config.yaml")
         return get_yaml(config_fn, all=False)
 
-    def process(self, filepath):
-        print "processing %s" % filepath
-        docs = get_yaml(filepath)
-
-        try:
-            for d in docs:
-                assert isinstance(d, Document)
-                print "   -", d.id
-                if hasattr(d, "content") and d.content is not None:
-                    self.db.add(d)
-                    for c in d.content:
-                        if isinstance(c, Code):
-                            print " code:", c
-                        else:
-                            print "    ", self.processor.process(c)
-
-        except KeyError as ke:
-            raise KeyError(ke.message + " (in %s)" % filepath)
-
     def build_db(self):
-        self.db = DB()
+        self.logger.info("building db from '%s'" % self.src)
 
         from os.path import join, exists
         from os import walk
 
-        for doc_module in self.config["modules"]:
-            doc_dir = join(self.src, doc_module)
+        for module in self.config["modules"]:
+            doc_dir = join(self.src, module)
             assert exists(doc_dir), \
                 "Module '%s' does not exist." % doc_dir
             for path, _, filenames in walk(doc_dir):
                 for fn in filenames:
                     filepath = join(path, fn)
-                    self.process(filepath)
+                    docs = get_yaml(filepath)
 
-    def render(self):
+                    try:
+                        for i, d in enumerate(docs):
+                            assert isinstance(d, Document)
+                            d.namespace = module
+                            self.db.register(d)
+                    except DuplicateDocumentError as dde:
+                        m = "{:s} in {:s}:{:d}".format(dde.message, filepath, i)
+                        raise DuplicateDocumentError(m)
+
+    def output(self):
+        self.logger.info("rendering into %s" % self.targ)
+        for key, doc in self.db.docs.iteritems():
+            assert isinstance(doc, Document)
+            self.logger.debug(" + %s::%s" % (doc.namespace, doc.id))
+            for part in doc.content:
+                if isinstance(part, Code):
+                    self.logger.debug("Code: %s" % part)
+                else:
+                    self.processor.process(part)
+
+    def check_dirs(self):
         from os import makedirs
         from os.path import exists
         from shutil import rmtree
@@ -77,9 +73,10 @@ class Renderer(object):
             rmtree(self.targ)
         makedirs(self.targ)
 
+    def render(self):
+        self.check_dirs()
         self.build_db()
-
-        print("rendering %s into %s" % (self.src, self.targ))
+        self.output()
 
 
 if __name__ == "__main__":
