@@ -1,9 +1,6 @@
-# Project specific
-
-# the target folder where everything is rendered statically into
-www/
-
-# Created by https://www.gitignore.io
+### Framework ###
+collscientia/framework/**/*.css
+collscientia/framework/**/*.css.map
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

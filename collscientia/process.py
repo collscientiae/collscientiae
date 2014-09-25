@@ -1,8 +1,11 @@
 # coding: utf8
+from __future__ import absolute_import
+from logging import Logger
 
 import markdown
 import jinja2
 import re
+from .db import CollScientiaDB
 
 knowl_id_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_.]+$")
 
@@ -15,9 +18,15 @@ class IgnorePattern(markdown.inlinepatterns.Pattern):
 
 class HashTagPattern(markdown.inlinepatterns.Pattern):
 
+    def __init__(self, pattern, db):
+        self.db = db
+        super(HashTagPattern, self).__init__(pattern)
+
     def handleMatch(self, m):
         el = markdown.util.etree.Element("a")
-        el.set('href', 'hashtag/' + m.group(2))
+        ht = m.group(2)
+        self.db.register_hashtag(ht)
+        el.set('href', 'hashtag/' + ht)
         el.text = '#' + m.group(2)
         return el
 
@@ -31,7 +40,7 @@ class KnowlTagPatternWithTitle(markdown.inlinepatterns.Pattern):
         assert knowl_id_pattern.match(kidsplit[-1]), "Knowl ID '%s' invalid" % kidsplit[-1]
         assert 1 <= len(kidsplit) <= 2
         if len(kidsplit) == 2:
-            from models import namespace_pattern
+            from .models import namespace_pattern
             assert namespace_pattern.match(kidsplit[0])
         if len(tokens) > 1:
             t = ''.join(tokens[1:])
@@ -50,7 +59,10 @@ class ContentProcessor(object):
     In the future, it might also be able to transform to LaTeX or PDF.
     """
 
-    def __init__(self, logger):
+    def __init__(self, logger, db):
+        assert isinstance(db, CollScientiaDB)
+        self.db = db
+        assert isinstance(logger, Logger)
         self.logger = logger
         self.md = md = markdown.Markdown(
             extensions=['markdown.extensions.toc',
@@ -71,7 +83,9 @@ class ContentProcessor(object):
 
         # Tell markdown to turn hashtags into search urls
         hashtag_keywords_rex = r'#([a-zA-Z][a-zA-Z0-9-_]{1,})\b'
-        self.md.inlinePatterns.add('hashtag', HashTagPattern(hashtag_keywords_rex), '<escape')
+        self.md.inlinePatterns.add('hashtag',
+                                   HashTagPattern(hashtag_keywords_rex, self.db),
+                                   '<escape')
 
         # Tells markdown to process "wikistyle" knowls with optional title
         # should cover {{ KID }} and {{ KID | title }}

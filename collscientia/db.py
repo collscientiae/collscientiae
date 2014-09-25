@@ -9,7 +9,7 @@ class DuplicateDocumentError(Exception):
         super(DuplicateDocumentError, self).__init__(msg)
 
 
-class DB(object):
+class CollScientiaDB(object):
 
     def __init__(self, logger):
         # maps a hashtag to list of documents
@@ -29,3 +29,10 @@ class DB(object):
             raise DuplicateDocumentError("'%s'" % id)
         self.docs[id] = document
         self.logger.debug(" + %s::%s" % (ns, id))
+
+    def register_hashtag(self, hashtag):
+        self.logger.debug("   # %s" % hashtag)
+
+    def check_consistency(self):
+        self.logger.info("checking consistency")
+        pass

@@ -1,0 +1,17 @@
+@import  "normalize.css"
+
+$screen-small: 350px
+$screen-medium: 700px
+
+$width: 16px
+
+body
+  .test
+    font-weight: bold
+
+  margin: $width
+  padding: $width
+
+  @media (min-width: $screen-small)
+    padding: $width/2
+    margin: $width/2

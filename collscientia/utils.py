@@ -10,7 +10,7 @@ class CollScientiaLoggingFilter(logging.Filter):
 
     def filter(self, record):
         record.elapsed = time() - self.start
-        record.where = "%s:%s" % (record.filename, record.lineno)
+        record.where = "%s:%s" % (record.filename[:-3], record.lineno)
         return True
 
 

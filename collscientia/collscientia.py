@@ -4,7 +4,7 @@ from os.path import abspath, normpath, isdir, join
 from collscientia.models import Code
 
 from collscientia.utils import get_yaml
-from .db import DB, DuplicateDocumentError
+from .db import CollScientiaDB, DuplicateDocumentError
 from .models import Document
 from .process import ContentProcessor
 from .utils import create_logger
@@ -21,8 +21,8 @@ class Renderer(object):
         if not isdir(self.src):
             raise ValueError("src must be a directory")
 
-        self.processor = ContentProcessor(logger)
-        self.db = DB(logger)
+        self.db = CollScientiaDB(logger)
+        self.processor = ContentProcessor(logger, self.db)
 
         self.config = self.read_config()
 
@@ -30,7 +30,7 @@ class Renderer(object):
         config_fn = join(self.src, "config.yaml")
         return get_yaml(config_fn, all=False)
 
-    def build_db(self):
+    def fill_db(self):
         self.logger.info("building db from '%s'" % self.src)
 
         from os.path import join, exists
@@ -61,7 +61,7 @@ class Renderer(object):
             self.logger.debug(" + %s::%s" % (doc.namespace, doc.id))
             for part in doc.content:
                 if isinstance(part, Code):
-                    self.logger.debug("Code: %s" % part)
+                    pass
                 else:
                     self.processor.process(part)
 
@@ -75,7 +75,8 @@ class Renderer(object):
 
     def render(self):
         self.check_dirs()
-        self.build_db()
+        self.fill_db()
+        self.db.check_consistency()
         self.output()
 
 

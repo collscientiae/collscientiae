@@ -5,9 +5,12 @@ function initMathjax() {
   script.type = "text/x-mathjax-config";
   script[(window.opera ? "innerHTML" : "text")] =
     "MathJax.Hub.Config({\n" +
-    "  tex2jax: { inlineMath: [['$','$'], ['\\\\(','\\\\)']] }\n" +
-    "  asciimath2jax: { delimiters: [['``','``']]  }\n" +
-    "});"
+    "  extensions: ['tex2jax.js','fp.js','asciimath2jax.js'],\n" +
+    "  jax: ['input/TeX','input/AsciiMath', 'output/SVG'],\n" +
+    "  tex2jax: { inlineMath: [['$','$'], ['\\\\(','\\\\)']] },\n" +
+    "  asciimath2jax: { delimiters: [['``','``']]  },\n" +
+    "  TeX: {extensions: ['autoload-all.js']}\n" +
+    "});";
   head.appendChild(script);
   script = document.createElement("script");
   script.type = "text/javascript";
@@ -15,16 +18,25 @@ function initMathjax() {
   head.appendChild(script);
 }
 
-var _gaq = _gaq || [];
-_gaq.push(['_setAccount', '{{ GOOGLE_ANALYTICS }}']);
-_gaq.push(['_trackPageview']);
-_gaq.push(['_trackPageLoadTime']);
-
 function googleAnalytics() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-}
+    var uaid = document.querySelector("meta[name='google_analytics']").account;
+    if (uaid !== null) {
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o), m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', '__gaTracker');
+
+        __gaTracker('create', uaid, 'auto');
+        __gaTracker('require', 'linkid');
+        __gaTracker('send', 'pageview');
+    }
+ }
 
 $(googleAnalytics);
 $(initMathjax);
