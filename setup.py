@@ -1,8 +1,9 @@
 from distutils.core import setup
+from collscientia import __version__
 
 setup(
     name='collscientia',
-    version='0.0.1',
+    version=__version__,
     packages=['collscientia'],
     url='',
     license='Apache 2.0',

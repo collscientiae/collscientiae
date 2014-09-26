@@ -49,15 +49,26 @@ class DocumentationModule(YAMLObjectCallingInit):
 class Code(YAMLObjectCallingInit):
     yaml_tag = "!code"
 
-    def __init__(self, input, output=None):
-        self.input = input
+    html = """<div class="code">
+<pre>{input}</pre>
+<pre>{output}</pre>
+</div>"""
+
+    def __init__(self, input, expected=None, output=None):
+        self.input = input.splitlines()
+        self.expected = expected
         self.output = output
 
     def test(self):
         raise NotImplementedError("this should be like a doctest")
 
     def __str__(self):
-        return "input:\n%s\noutput: %s" % (self.input, self.output)
+        return "input:\n%s\noutput: %s" % (self.input[0], self.output)
+
+    def to_html(self):
+        return Code.html.format(
+            input='\n'.join(self.input),
+            output=self.output)
 
 
 class Section(YAMLObjectCallingInit):
@@ -83,6 +94,8 @@ class Document(YAMLObjectCallingInit):
         self.subtitle = subtitle
         self.abstract = abstract
         self.seealso = seealso
+        # output contains html (or latex) after processing the content
+        self.output = None
 
         if tags is not None:
             if not isinstance(tags, (list, tuple)):

@@ -1,10 +1,10 @@
 # coding: utf8
 from __future__ import absolute_import
 from logging import Logger
-
 import markdown
 import jinja2
 import re
+from .models import Code
 from .db import CollScientiaDB
 
 knowl_id_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_.]+$")
@@ -18,15 +18,15 @@ class IgnorePattern(markdown.inlinepatterns.Pattern):
 
 class HashTagPattern(markdown.inlinepatterns.Pattern):
 
-    def __init__(self, pattern, db):
-        self.db = db
+    def __init__(self, pattern, cp):
+        self.cp = cp
         super(HashTagPattern, self).__init__(pattern)
 
     def handleMatch(self, m):
         el = markdown.util.etree.Element("a")
         ht = m.group(2)
-        self.db.register_hashtag(ht)
-        el.set('href', 'hashtag/' + ht)
+        self.cp.register_hashtag(ht)
+        el.set('href', '../hashtag/' + ht)
         el.text = '#' + m.group(2)
         return el
 
@@ -84,7 +84,7 @@ class ContentProcessor(object):
         # Tell markdown to turn hashtags into search urls
         hashtag_keywords_rex = r'#([a-zA-Z][a-zA-Z0-9-_]{1,})\b'
         self.md.inlinePatterns.add('hashtag',
-                                   HashTagPattern(hashtag_keywords_rex, self.db),
+                                   HashTagPattern(hashtag_keywords_rex, self),
                                    '<escape')
 
         # Tells markdown to process "wikistyle" knowls with optional title
@@ -92,8 +92,20 @@ class ContentProcessor(object):
         knowltagtitle_regex = r'knowl\[\[([^\]]+)\]\]'
         md.inlinePatterns.add('knowltagtitle', KnowlTagPatternWithTitle(knowltagtitle_regex), '<escape')
 
-    def process(self, content, target="html"):
+    def register_hashtag(self, hashtag):
+        self.db.register_hashtag(hashtag, self.doc_id)
+
+    def process(self, document, target="html"):
+        content = document.content
+        self.doc_id = document.id
         return getattr(self, "process_%s" % target)(content)
 
     def process_html(self, content):
-        return self.md.convert(content)
+        output = []
+        for part in content:
+            if isinstance(part, Code):
+                c = part.to_html()
+                output.append(c)
+            else:
+                output.append(self.md.convert(part))
+        return "\n".join(output)

@@ -34,9 +34,7 @@ class Renderer(object):
         config_fn = join(self.src, "config.yaml")
         return get_yaml(config_fn, all=False)
 
-    def fill_db(self):
-        self.logger.info("building db from '%s'" % self.src)
-
+    def get_documents(self):
         from os.path import join, exists
         from os import walk
 
@@ -47,27 +45,30 @@ class Renderer(object):
             for path, _, filenames in walk(doc_dir):
                 for fn in filenames:
                     filepath = join(path, fn)
-                    docs = get_yaml(filepath)
+                    yield module, filepath, get_yaml(filepath)
 
-                    try:
-                        for i, d in enumerate(docs):
-                            assert isinstance(d, Document)
-                            d.namespace = module
-                            self.db.register(d)
-                    except DuplicateDocumentError as dde:
-                        m = "{:s} in {:s}:{:d}".format(dde.message, filepath, i)
-                        raise DuplicateDocumentError(m)
+    def process(self):
+        self.logger.info("building db from '%s'" % self.src)
+
+        for module, filepath, docs in self.get_documents():
+            try:
+                for i, d in enumerate(docs):
+                    assert isinstance(d, Document)
+                    d.namespace = module
+                    self.db.register(d)
+                    d.output = self.processor.process(d)
+                    self.logger.debug("\n" + d.output)
+            except DuplicateDocumentError as dde:
+                m = "{:s} in {:s}:{:d}".format(dde.message, filepath, i)
+                raise DuplicateDocumentError(m)
 
     def output(self):
         self.logger.info("rendering into %s" % self.targ)
-        for key, doc in self.db.docs.iteritems():
-            assert isinstance(doc, Document)
-            self.logger.debug(" + %s::%s" % (doc.namespace, doc.id))
-            for part in doc.content:
-                if isinstance(part, Code):
-                    pass
-                else:
-                    self.processor.process(part)
+        for ns, docs in self.db.docs.iteritems():
+            for key, doc in docs.iteritems():
+                assert isinstance(doc, Document)
+                out_fn = join(self.targ, ns, '.'.join([doc.id, "html"]))
+                self.logger.debug(" + %s" % out_fn)
 
     def check_dirs(self):
         from os import makedirs
@@ -79,7 +80,7 @@ class Renderer(object):
 
     def render(self):
         self.check_dirs()
-        self.fill_db()
+        self.process()
         self.db.check_consistency()
         self.output()
 
