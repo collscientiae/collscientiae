@@ -32,7 +32,7 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def __init__(self):
-        msg = '%(elapsed)f %(where)-20s $BOLD%(levelname)-9s$RESET %(message)s'
+        msg = '%(elapsed).2f %(where)-20s $BOLD%(levelname)-9s$RESET %(message)s'
         msg = msg.replace("$RESET", ColoredFormatter.RESET_SEQ).replace(
             "$BOLD", ColoredFormatter.BOLD_SEQ)
         logging.Formatter.__init__(self, fmt=msg)

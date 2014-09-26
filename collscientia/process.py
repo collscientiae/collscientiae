@@ -2,9 +2,8 @@
 from __future__ import absolute_import
 from logging import Logger
 import markdown
-import jinja2
 import re
-from .models import Code
+from .models import Code, Document
 from .db import CollScientiaDB
 
 knowl_id_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_.]+$")
@@ -24,9 +23,9 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
 
     def handleMatch(self, m):
         el = markdown.util.etree.Element("a")
-        ht = m.group(2)
+        ht = m.group(2).lower()
         self.cp.register_hashtag(ht)
-        el.set('href', '../hashtag/' + ht)
+        el.set('href', '../hashtag/{}.html'.format(ht))
         el.text = '#' + m.group(2)
         return el
 
@@ -36,7 +35,7 @@ class KnowlTagPatternWithTitle(markdown.inlinepatterns.Pattern):
     def handleMatch(self, m):
         tokens = m.group(2).split("|")
         kid = tokens[0].strip()
-        kidsplit = kid.split("::")
+        kidsplit = kid.split("/")
         assert knowl_id_pattern.match(kidsplit[-1]), "Knowl ID '%s' invalid" % kidsplit[-1]
         assert 1 <= len(kidsplit) <= 2
         if len(kidsplit) == 2:
@@ -93,12 +92,15 @@ class ContentProcessor(object):
         md.inlinePatterns.add('knowltagtitle', KnowlTagPatternWithTitle(knowltagtitle_regex), '<escape')
 
     def register_hashtag(self, hashtag):
-        self.db.register_hashtag(hashtag, self.doc_id)
+        self.db.register_hashtag(hashtag, self.document)
 
     def process(self, document, target="html"):
-        content = document.content
-        self.doc_id = document.id
-        return getattr(self, "process_%s" % target)(content)
+        """
+
+        :type document: Document
+        """
+        self.document = document
+        return getattr(self, "process_%s" % target)(document.content)
 
     def process_html(self, content):
         output = []
@@ -107,5 +109,6 @@ class ContentProcessor(object):
                 c = part.to_html()
                 output.append(c)
             else:
-                output.append(self.md.convert(part))
+                html = self.md.convert(part)
+                output.append(html)
         return "\n".join(output)
