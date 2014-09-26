@@ -12,14 +12,18 @@ from .utils import create_logger
 
 class Renderer(object):
 
-    def __init__(self, src, targ):
+    def __init__(self, src, theme, targ):
         self.logger = logger = create_logger()
 
         self.src = abspath(normpath(src))
+        self.theme = abspath(normpath(theme))
         self.targ = abspath(normpath(targ))
 
         if not isdir(self.src):
             raise ValueError("src must be a directory")
+
+        if not isdir(self.theme):
+            raise ValueError("theme must be a directory")
 
         self.db = CollScientiaDB(logger)
         self.processor = ContentProcessor(logger, self.db)
@@ -82,7 +86,10 @@ class Renderer(object):
 
 if __name__ == "__main__":
     import sys
-    assert len(sys.argv) == 3,\
-        "Need two arguments, first ist the source directory, the second the target directory."
-    r = Renderer(sys.argv[1], sys.argv[2])
+    assert len(sys.argv) == 4,\
+        "Need three arguments, first ist the source directory," \
+        "the second the theme directory (containing an 'src' directory with" \
+        "'static' files and the html templates) and" \
+        "third is the target directory where everything is rendered into."
+    r = Renderer(*sys.argv[1:])
     r.render()
