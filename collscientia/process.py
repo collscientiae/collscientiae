@@ -46,6 +46,22 @@ class KnowlTagPatternWithTitle(markdown.inlinepatterns.Pattern):
             return "{{ KNOWL('%s', title='%s') }}" % (kid, t.strip())
         return "{{ KNOWL('%s') }}" % kid
 
+class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor):
+
+    example_pat = re.compile(r"^[Ee]xample::\s*$")
+
+    def run(self, parent, blocks):
+        from markdown import util
+
+        sibling = self.lastChild(parent)
+        print " sibling: ", sibling.text
+
+        return markdown.blockprocessors.CodeBlockProcessor.run(self, parent, blocks)
+
+
+
+
+
 
 class ContentProcessor(object):
 
@@ -69,7 +85,8 @@ class ContentProcessor(object):
                         'markdown.extensions.sane_lists',
                         'markdown.extensions.meta',
                         #'markdown.extensions.smarty',
-                        'markdown.extensions.codehilite'])
+                        #'markdown.extensions.codehilite'
+                        ])
 
         # Prevent $..$, $$..$$, \(..\), \[..\] blocks from being processed by Markdown
         md.inlinePatterns.add('mathjax$', IgnorePattern(r'(?<![\\\$])(\$[^\$].*?\$)'), '<escape')
@@ -91,6 +108,9 @@ class ContentProcessor(object):
         # should cover {{ KID }} and {{ KID | title }}
         knowltagtitle_regex = r'knowl\[\[([^\]]+)\]\]'
         md.inlinePatterns.add('knowltagtitle', KnowlTagPatternWithTitle(knowltagtitle_regex), '<escape')
+
+        # codeblocks with plot:: or example:: prefixes
+        md.parser.blockprocessors["code"] = CollScientiaCodeBlockProcessor(md.parser)
 
     def register_hashtag(self, hashtag):
         self.db.register_hashtag(hashtag, self.document)

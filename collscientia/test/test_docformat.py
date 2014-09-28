@@ -13,14 +13,16 @@ class DocformatTest(unittest.TestCase):
         fn = join(dirname(abspath(__file__)), "docformat.md")
         with open(fn, "r") as data:
             doc, meta = self.processor.convert(data.read())
+            print "\n---"
             print doc
-            print
+            print "\n---"
             print meta
 
         fn = join(dirname(abspath(__file__)), "docformat2.md")
         with open(fn, "r") as data:
             doc, meta = self.processor.convert(data.read())
+            print "\n---"
             print doc
-            print
+            print "\n---"
             print meta
 
