@@ -5,6 +5,7 @@ setup(
     name='collscientia',
     version=__version__,
     packages=['collscientia'],
+    test_suite='nose.collector',
     url='',
     license='Apache 2.0',
     author='Harald Schilly',

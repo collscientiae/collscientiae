@@ -16,7 +16,7 @@ from shutil import rmtree
 
 class Renderer(object):
 
-    module_blacklist = ["hashtag"]
+    module_blacklist = ["hashtag", "_tests"]
 
     def __init__(self, src, theme, targ):
         self.log = log = create_logger()
@@ -64,7 +64,7 @@ class Renderer(object):
                     assert isinstance(d, Document)
                     d.namespace = module
                     self.db.register(d)
-                    d.output = self.processor.process(d)
+                    d.output = self.processor.convert(d)
                     #self.log.debug("\n" + d.output)
             except DuplicateDocumentError as dde:
                 # add filepath and document index to error message

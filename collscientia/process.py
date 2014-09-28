@@ -67,6 +67,7 @@ class ContentProcessor(object):
             extensions=['markdown.extensions.toc',
                         'markdown.extensions.extra',
                         'markdown.extensions.sane_lists',
+                        'markdown.extensions.meta',
                         #'markdown.extensions.smarty',
                         'markdown.extensions.codehilite'])
 
@@ -94,21 +95,29 @@ class ContentProcessor(object):
     def register_hashtag(self, hashtag):
         self.db.register_hashtag(hashtag, self.document)
 
-    def process(self, document, target="html"):
+    def convert(self, document, target="html"):
         """
 
         :type document: Document
         """
         self.document = document
-        return getattr(self, "process_%s" % target)(document.content)
+        html = self.md.convert(document)
+        meta = self.md.Meta.copy()
+        assert isinstance(meta, dict)
 
-    def process_html(self, content):
-        output = []
-        for part in content:
-            if isinstance(part, Code):
-                c = part.to_html()
-                output.append(c)
-            else:
-                html = self.md.convert(part)
-                output.append(html)
-        return "\n".join(output)
+        # only allowed keys
+        allowed_keys = ["id", "authors", "copyright", "title",
+                        "subtitle", "abstract", "date", "seealso"]
+        for key in meta.keys():
+            assert key in allowed_keys
+
+        # no arrays for selected keys
+        for key in allowed_keys:
+            if key in ["authors", "seealso"]:
+                continue
+            if key in meta:
+                # and join multilines
+                meta[key] = '\n'.join(meta[key])
+
+        return html, meta
+
