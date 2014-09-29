@@ -23,12 +23,12 @@ class CollScientiaDB(object):
 
     def register(self, document):
         assert isinstance(document, Document), "Given object is not a 'Document'"
-        id = document.id
+        docid = document.docid
         ns = document.namespace
-        if id in self.docs[ns]:
-            raise DuplicateDocumentError("'%s'" % id)
-        self.docs[ns][id] = document
-        self.logger.debug(" + %s::%s" % (ns, id))
+        if docid in self.docs[ns]:
+            raise DuplicateDocumentError("'%s'" % docid)
+        self.docs[ns][docid] = document
+        #self.logger.debug(" + %s::%s" % (ns, docid))
 
     def register_hashtag(self, hashtag, document):
         self.logger.debug("   # %s" % hashtag)

@@ -1,4 +1,3 @@
-id: test.example2
 title: Test tests it again
 authors: harald
          susan

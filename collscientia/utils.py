@@ -76,3 +76,9 @@ def get_yaml(path, all=True):
         return yaml.load_all(stream)
     else:
         return yaml.load(stream)
+
+
+def get_markdown(path):
+    import codecs
+    stream = codecs.open(path, "r", "utf8")
+    return stream.read()

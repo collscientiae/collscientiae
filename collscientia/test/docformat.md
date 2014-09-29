@@ -1,4 +1,3 @@
-id: tutorial.install
 title: Installation Instructions
 subtitle: This explains how to install something
 abstract: This is the abstract,

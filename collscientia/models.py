@@ -3,6 +3,7 @@ import yaml
 import inspect
 import re
 namespace_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]+$")
+id_pattern = re.compile(r"^[a-zA-Z0-9_.]+$")
 
 
 class YAMLObjectCallingInit(yaml.YAMLObject):
@@ -46,31 +47,6 @@ class DocumentationModule(YAMLObjectCallingInit):
         return str(filter(lambda k_v: not k_v[0].startswith("_"), self.__dict__.iteritems()))
 
 
-class Code(YAMLObjectCallingInit):
-    yaml_tag = "!code"
-
-    html = """<div class="code">
-<pre>{input}</pre>
-<pre>{output}</pre>
-</div>"""
-
-    def __init__(self, input, expected=None, output=None):
-        self.input = input.splitlines()
-        self.expected = expected
-        self.output = output
-
-    def test(self):
-        raise NotImplementedError("this should be like a doctest")
-
-    def __str__(self):
-        return "input:\n%s\noutput: %s" % (self.input[0], self.output)
-
-    def to_html(self):
-        return Code.html.format(
-            input='\n'.join(self.input),
-            output=self.output)
-
-
 class Section(YAMLObjectCallingInit):
     yaml_tag = '!section'
 
@@ -82,30 +58,35 @@ class Section(YAMLObjectCallingInit):
         return "Section %s\n%s" % (self.title, self.text)
 
 
-class Document(YAMLObjectCallingInit):
+class Document(object):
 
-    def __init__(self, id, title,
-                 subtitle=None, abstract=None,
-                 tags=None, content=None,
-                 seealso=None):
-        self.id = id
-        self._ns = None
+    allowed_types = ["document", "tutorial", "example", "reference"]
+
+    def __init__(self, docid, md_raw, ns=None):
+        assert docid is not None and id_pattern.match(docid)
+        self.docid = docid
+        self._ns = ns
+        self.md_raw = md_raw
+
+    def update(self, output, title=None, authors=None,
+               subtitle=None, abstract=None,
+               tags=None, type=None,
+               seealso=None):
+        assert type and type in Document.allowed_types,\
+            "type is '%s'" % type
+        self.type = type
         self.title = title
         self.subtitle = subtitle
         self.abstract = abstract
         self.seealso = seealso
         # output contains html (or latex) after processing the content
-        self.output = None
+        self.output = output
+        self.authors = authors
 
         if tags is not None:
             if not isinstance(tags, (list, tuple)):
                 tags = [tags]
         self.tags = tags
-
-        if content is not None:
-            if not isinstance(content, (list, tuple)):
-                content = [content]
-        self.content = content
 
     @property
     def namespace(self):
@@ -115,25 +96,12 @@ class Document(YAMLObjectCallingInit):
     @namespace.setter
     def namespace(self, ns):
         assert self._ns is None, "Namespace can only be set once"
-        assert namespace_pattern.match(ns) is not None
+        assert namespace_pattern.match(ns)
         self._ns = ns
 
 
 class Plot(Document):
-    yaml_tag = "!plot"
 
     def __init__(self, plot, **kwargs):
         self.plot = plot
         Document.__init__(self, **kwargs)
-
-
-class Example(Document):
-    yaml_tag = "!example"
-
-
-class Reference(Document):
-    yaml_tag = "!reference"
-
-
-class Tutorial(Document):
-    yaml_tag = "!tutorial"

@@ -1,10 +1,9 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
 from os.path import abspath, normpath, isdir, join
-from collscientia.models import Code
 import codecs
 
-from collscientia.utils import get_yaml
+from collscientia.utils import get_yaml, get_markdown
 from .db import CollScientiaDB, DuplicateDocumentError
 from .models import Document
 from .process import ContentProcessor
@@ -15,7 +14,6 @@ from shutil import rmtree
 
 
 class Renderer(object):
-
     module_blacklist = ["hashtag", "_tests"]
 
     def __init__(self, src, theme, targ):
@@ -41,7 +39,7 @@ class Renderer(object):
         return get_yaml(config_fn, all=False)
 
     def get_documents(self):
-        from os.path import join, exists
+        from os.path import join, exists, splitext, relpath, pathsep
         from os import walk
 
         for module in self.config["modules"]:
@@ -53,22 +51,33 @@ class Renderer(object):
             for path, _, filenames in walk(doc_dir):
                 for fn in filenames:
                     filepath = join(path, fn)
-                    yield module, filepath, get_yaml(filepath)
+                    # yield module, filepath, get_yaml(filepath)
+                    basename, ext = splitext(fn)
+                    assert ext == ".md", \
+                        'fn: {0:s} (splitext: {1:s})'.format(fn, ext)
+                    self.log.debug("RELPATH: %s" % relpath(path, doc_dir))
+                    id_path = relpath(path, doc_dir).split(pathsep)
+                    if id_path[0] == ".":
+                        id_path.pop(0)
+                    id_path.append(basename)
+                    docid = '.'.join(id_path)
+                    self.log.debug("DOCID: %s" % docid)
+                    yield module, filepath, docid, get_markdown(filepath)
 
     def process(self):
         self.log.info("building db from '%s'" % self.src)
 
-        for module, filepath, docs in self.get_documents():
+        for module, filepath, docid, md_raw in self.get_documents():
             try:
-                for i, d in enumerate(docs):
-                    assert isinstance(d, Document)
-                    d.namespace = module
-                    self.db.register(d)
-                    d.output = self.processor.convert(d)
-                    #self.log.debug("\n" + d.output)
+                doc = Document(docid=docid, md_raw=md_raw)
+                html, meta = self.processor.convert(doc)
+                doc.update(output=html, **meta)
+                doc.namespace = module
+                self.db.register(doc)
+
             except DuplicateDocumentError as dde:
                 # add filepath and document index to error message
-                m = "{:s} in {:s}:{:d}".format(dde.message, filepath, i)
+                m = "{:s} in {:s}".format(dde.message, filepath)
                 raise DuplicateDocumentError(m)
 
     def output(self):
@@ -101,14 +110,14 @@ class Renderer(object):
 
             for key, doc in docs.iteritems():
                 assert isinstance(doc, Document)
-                self.log.debug("  + writing %s" % doc.id)
-                out_fn = join(doc_dir, '{}.{}'.format(doc.id, "html"))
+                self.log.debug("  + writing %s" % doc.docid)
+                out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
                 with codecs.open(out_fn, "w", "utf8") as out:
                     out.write(u"""<a href="../index.html">up</a> |
                     <a href="index.html">index</a>
                     <br>
                     <h1>{0.title}</h1>
-                    <div>{0.abstract}</div>
+                    <div><i>Abstract:</i>{0.abstract}</div>
                     <h2>Content:</h2>
                     {0.output}
                     """.format(doc))
@@ -137,7 +146,8 @@ class Renderer(object):
                             <br>""")
                 out.write("<ul>")
                 for d in docs:
-                    link = "<li><a href='../{0.namespace}/{0.id}.html'>{0.id}</a></li>".format(d)
+                    link = "<li><a href='../{0.namespace}/{0.docid}.html'>{0.docid}</a></li>"\
+                        .format(d)
                     out.write(link)
                 out.write("</ul>")
 
@@ -155,7 +165,8 @@ class Renderer(object):
 
 if __name__ == "__main__":
     import sys
-    assert len(sys.argv) == 4,\
+
+    assert len(sys.argv) == 4, \
         "Need three arguments, first ist the source directory," \
         "the second the theme directory (containing an 'src' directory with" \
         "'static' files and the html templates) and" \
