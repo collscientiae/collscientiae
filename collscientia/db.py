@@ -28,10 +28,10 @@ class CollScientiaDB(object):
         if docid in self.docs[ns]:
             raise DuplicateDocumentError("'%s'" % docid)
         self.docs[ns][docid] = document
-        #self.logger.debug(" + %s::%s" % (ns, docid))
+        # self.logger.debug(" + %s::%s" % (ns, docid))
 
     def register_hashtag(self, hashtag, document):
-        self.logger.debug("   # %s" % hashtag)
+        # self.logger.debug("   # %s" % hashtag)
         self.hashtags[hashtag].add(document)
 
     def check_consistency(self):
