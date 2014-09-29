@@ -48,13 +48,31 @@ class KnowlTagPatternWithTitle(markdown.inlinepatterns.Pattern):
 
 class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor):
 
-    example_pat = re.compile(r"^[Ee]xample::\s*$")
+    code_intro_pattern = re.compile(r"^([Pp]lot|[Ee]xample)::\s*$")
 
     def run(self, parent, blocks):
-        from markdown import util
+        # interceptor: only match in such a case, where sibling matches the
+        # code_intro_pattern and remove it.
 
         sibling = self.lastChild(parent)
-        print " sibling: ", sibling.text
+        codeblocks = []
+
+        if sibling is not None and sibling.text is not None:
+            matching = CollScientiaCodeBlockProcessor.code_intro_pattern.match(sibling.text)
+            if matching:
+                while True:
+                    i = len(codeblocks)
+                    if markdown.blockprocessors.CodeBlockProcessor.test(self, parent, blocks[i]):
+                        codeblocks.append(self.detab(blocks[i]))
+                    else:
+                        break
+
+        parent.remove(sibling)
+        print " code:"
+        for codeblock in codeblocks:
+            print "     ---"
+            for codeline in codeblock[0].splitlines():
+                print "   $", codeline
 
         return markdown.blockprocessors.CodeBlockProcessor.run(self, parent, blocks)
 
