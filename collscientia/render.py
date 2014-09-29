@@ -1,29 +1,84 @@
-from os.path import abspath, normpath, isdir, join
-from os import makedirs
+# -*- coding: utf8 -*-
+from __future__ import absolute_import
+from os.path import abspath, normpath, isdir, join, relpath, splitext
+from os import makedirs, walk, link
 from .models import Document
 import codecs
+import jinja2 as j2
+import yaml
 
+@j2.contextfilter
+def filter_prefix(ctx, link):
+    """
+    Prepend level-times "../" to the given string.
+    Used to go up in the directory hierarchy.
+    Yes, one could also do absolute paths, but then it is harder to debug locally!
+    """
+
+    level = ctx.get("level", 0)
+    if level == 0:
+        return link
+    path = ['..'] * level
+    path.append(link)
+    return '/'.join(path)
 
 class OutputRenderer(object):
-    def __init__(self, log, db, targ):
-        self.log = log
-        self.db = db
-        self.targ = targ
+
+    def __init__(self, collscientia):
+        self.log = collscientia.log
+        self.db = collscientia.db
+        self.src = collscientia.src
+        self.theme = collscientia.theme
+        self.targ = collscientia.targ
+
+        self.tmpl_dir = join(self.theme, "src")
+        j2loader = j2.FileSystemLoader(self.tmpl_dir)
+        self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
+
+        config = yaml.load(open(join(self.theme, "config.yaml")))
+        self.j2env.globals.update(config)
+
+        self.j2env.filters["prefix"] = filter_prefix
+
+    def render_template(self, template_fn, target_fn, **data):
+        tmpl = self.j2env.get_template(template_fn)
+        html = tmpl.render(**data)
+        with open(target_fn, "wb") as output:
+            output.write(html.encode("utf-8"))
+            output.write(b"\n")
+
+
+    def copy_static_files(self):
+        """
+        This copies static files into the output file tree.
+        """
+        self.log.info("copying static files")
+        for dir in ["static", "img"]:
+            static_dir = join(self.tmpl_dir, dir)
+            target_dir = join(self.targ, dir)
+            makedirs(target_dir)
+            for path, _, filenames in walk(static_dir):
+                for fn in filenames:
+                    if splitext(fn)[-1] in [".scss", ".sass"]:
+                        continue
+                    filepath = join(path, fn)
+                    relative = relpath(path, static_dir)
+                    targetpath = normpath(join(target_dir, relative, fn))
+                    self.log.debug("link %s -> %s" % (join(relative, fn), targetpath))
+                    link(filepath, targetpath)
 
     def output(self):
         self.log.info("rendering into %s" % self.targ)
+        self.copy_static_files()
         self.output_index()
         self.output_documents()
         self.output_knowls()
         self.output_hashtags()
 
     def output_index(self):
-        with open(join(self.targ, "index.html"), "w") as out:
-            out.write("<h1>Modules</h1><ul>")
-            for ns in self.db.docs.keys():
-                out.write("<li><a href='{0}/index.html'>{0}</a></li>".format(ns))
-            out.write("</ul><br><br>")
-            out.write("<a href='hashtag/index.html'>list of all hashtags</a>")
+        target_fn = join(self.targ, "index.html")
+        self.render_template("index.html", target_fn,
+                             modules=self.db.docs.keys())
 
     def output_knowls(self):
         for ns, docs in self.db.docs.iteritems():
@@ -32,6 +87,9 @@ class OutputRenderer(object):
             makedirs(knowl_dir)
             for key, doc in docs.iteritems():
                 out_fn = join(knowl_dir, '{}.{}'.format(doc.docid, "html"))
+
+                # TODO: self.render_template(level = 2) !!!
+
                 with codecs.open(out_fn, "w", "utf8") as out:
                     out.write("knowl: %s" % doc.docid)
 
@@ -54,6 +112,9 @@ class OutputRenderer(object):
                 assert isinstance(doc, Document)
                 out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
                 self.log.debug("  + %s" % out_fn)
+
+                # TODO: self.render_template(level = 1) !!!
+
                 with codecs.open(out_fn, "w", "utf8") as out:
                     out.write(u"""<a href="../index.html">up</a> |
                     <a href="index.html">index</a>
@@ -81,6 +142,9 @@ class OutputRenderer(object):
 
         for hashtag, docs in hashtags:
             out_fn = join(hashtag_dir, '{}.{}'.format(hashtag, "html"))
+
+            # TODO: self.render_template(level = 1) !!!
+
             self.log.debug("  # %s" % out_fn)
             with open(out_fn, "w") as out:
                 out.write("""<a href="../index.html">up</a> |

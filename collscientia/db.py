@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
 from .models import Document
 
@@ -12,9 +12,9 @@ class DuplicateDocumentError(Exception):
 
 class CollScientiaDB(object):
 
-    def __init__(self, logger):
+    def __init__(self, collscientia):
         # maps a hashtag to list of documents
-        self.logger = logger
+        self.log = collscientia.log
         self.hashtags = defaultdict(set)
 
         # maps all namespace/IDs 1:1 to documents
@@ -28,18 +28,18 @@ class CollScientiaDB(object):
         if docid in self.docs[ns]:
             raise DuplicateDocumentError("'%s'" % docid)
         self.docs[ns][docid] = document
-        # self.logger.debug(" + %s::%s" % (ns, docid))
+        # self.log.debug(" + %s::%s" % (ns, docid))
 
     def register_hashtag(self, hashtag, document):
-        # self.logger.debug("   # %s" % hashtag)
+        # self.log.debug("   # %s" % hashtag)
         self.hashtags[hashtag].add(document)
 
     def check_consistency(self):
-        self.logger.info("checking consistency")
+        self.log.info("checking consistency")
         for ns, docs in self.docs.iteritems():
             for key, doc in docs.iteritems():
                 assert isinstance(doc, Document)
                 assert doc.namespace == ns
 
         # for ht, ids in self.hashtags.iteritems():
-        # self.logger.debug("  #%s -> %s" % (ht, ids))
+        # self.log.debug("  #%s -> %s" % (ht, ids))

@@ -1,3 +1,4 @@
+from __future__ import absolute_import, unicode_literals
 import logging
 from time import time
 
@@ -69,8 +70,8 @@ def create_logger(level=logging.DEBUG):
 
 def get_yaml(path, all=True):
     import yaml
-    #import codecs
-    #stream = codecs.open(path, "r", "utf8")
+    # import codecs
+    # stream = codecs.open(path, "r", "utf8")
     stream = open(path, "r")
     if all:
         return yaml.load_all(stream)

@@ -1,27 +1,31 @@
 # -*- coding: utf8 -*-
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 from os.path import abspath, normpath, isdir, join
 import codecs
-
-from collscientia.utils import get_yaml, get_markdown
+from .utils import get_yaml, get_markdown, create_logger
 from .db import CollScientiaDB, DuplicateDocumentError
 from .models import Document
 from .process import ContentProcessor
-from .utils import create_logger
 from .render import OutputRenderer
 from os.path import exists
 from shutil import rmtree
 from os import makedirs
 
+
 class CollScientia(object):
-    module_blacklist = ["hashtag", "_tests"]
+    """
+    This is the main class of this module.
+
+
+    """
+    module_blacklist = ["hashtag", "tests"]
 
     def __init__(self, src, theme, targ):
-        self.log = log = create_logger()
+        self._log = create_logger()
 
-        self.src = abspath(normpath(src))
-        self.theme = abspath(normpath(theme))
-        self.targ = abspath(normpath(targ))
+        self._src = abspath(normpath(src))
+        self._theme = abspath(normpath(theme))
+        self._targ = abspath(normpath(targ))
 
         if not isdir(self.src):
             raise ValueError("src must be a directory")
@@ -29,10 +33,30 @@ class CollScientia(object):
         if not isdir(self.theme):
             raise ValueError("theme must be a directory")
 
-        self.db = CollScientiaDB(log)
-        self.processor = ContentProcessor(log, self.db)
-        self.renderer = OutputRenderer(log, self.db, self.targ)
+        self._db = CollScientiaDB(self)
+        self.processor = ContentProcessor(self)
+        self.renderer = OutputRenderer(self)
         self.config = self.read_config()
+
+    @property
+    def log(self):
+        return self._log
+
+    @property
+    def src(self):
+        return self._src
+
+    @property
+    def targ(self):
+        return self._targ
+
+    @property
+    def theme(self):
+        return self._theme
+
+    @property
+    def db(self):
+        return self._db
 
     def read_config(self):
         config_fn = join(self.src, "config.yaml")

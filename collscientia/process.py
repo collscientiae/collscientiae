@@ -1,5 +1,5 @@
 # coding: utf8
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 from logging import Logger
 import markdown
 import re
@@ -87,7 +87,9 @@ class ContentProcessor(object):
     In the future, it might also be able to transform to LaTeX or PDF.
     """
 
-    def __init__(self, logger, db):
+    def __init__(self, collscientia):
+        db = collscientia.db
+        logger = collscientia.log
         assert isinstance(db, CollScientiaDB)
         self.db = db
         self.document = None
