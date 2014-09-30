@@ -7,6 +7,7 @@ import codecs
 import jinja2 as j2
 import yaml
 
+
 @j2.contextfilter
 def filter_prefix(ctx, link):
     """
@@ -21,6 +22,7 @@ def filter_prefix(ctx, link):
     path = ['..'] * level
     path.append(link)
     return '/'.join(path)
+
 
 class OutputRenderer(object):
 
@@ -46,7 +48,6 @@ class OutputRenderer(object):
         with open(target_fn, "wb") as output:
             output.write(html.encode("utf-8"))
             output.write(b"\n")
-
 
     def copy_static_files(self):
         """
@@ -77,8 +78,9 @@ class OutputRenderer(object):
 
     def output_index(self):
         target_fn = join(self.targ, "index.html")
+        links = [(_, "%s/index.html" % _) for _ in self.db.docs.keys()]
         self.render_template("index.html", target_fn,
-                             modules=self.db.docs.keys())
+                             links=links)
 
     def output_knowls(self):
         for ns, docs in self.db.docs.iteritems():
@@ -98,32 +100,25 @@ class OutputRenderer(object):
             doc_dir = join(self.targ, ns)
             makedirs(doc_dir)
 
-            with codecs.open(join(doc_dir, "index.html"), "w", "utf8") as out:
-                out.write("""<a href="../index.html">up</a> |
-                <a href="_knowl/">knowls</a>
-                <h1>{0}</h1>
-                <br>
-                <ul>""".format(ns))
-                for key in docs.keys():
-                    out.write("<li><a href='{0}.html'>{0}</a></li>".format(key))
-                out.write("<ul>")
+            doc_index = join(doc_dir, "index.html")
+            links = [(_, _ + ".html") for _ in docs.keys()]
+            links.insert(0, ("Knowls", "_knowl/index.html"))
+
+            self.render_template("index.html",
+                                 doc_index,
+                                 title="%s Index" % ns.title(),
+                                 level=1,
+                                 links=links)
 
             for key, doc in docs.iteritems():
                 assert isinstance(doc, Document)
                 out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
                 self.log.debug("  + %s" % out_fn)
-
-                # TODO: self.render_template(level = 1) !!!
-
-                with codecs.open(out_fn, "w", "utf8") as out:
-                    out.write(u"""<a href="../index.html">up</a> |
-                    <a href="index.html">index</a>
-                    <br>
-                    <h1>{0.title}</h1>
-                    <div><i>Abstract:</i>{0.abstract}</div>
-                    <h2>Content:</h2>
-                    {0.output}
-                    """.format(doc))
+                self.render_template("document.html",
+                                     out_fn,
+                                     title=doc.title,
+                                     doc=doc,
+                                     level=1)
 
     def output_hashtags(self):
         hashtag_dir = join(self.targ, "hashtag")
@@ -131,28 +126,23 @@ class OutputRenderer(object):
         hashtags = sorted(self.db.hashtags.iteritems(),
                           key=lambda _: _[0])
 
-        with open(join(hashtag_dir, "index.html"), "w") as out:
-            out.write("""<a href="../index.html">up</a>
-            <h1>Hashtags</h1>""")
-            out.write("<ul>")
-            for h in hashtags:
-                link = "<li><a href='{0}.html'>#{0}</a></li>\n".format(h[0])
-                out.write(link)
-            out.write("</ul>")
+        hashtag_index = join(hashtag_dir, "index.html")
+        links = [("#" + _[0], _[0] + ".html") for _ in hashtags]
+        self.render_template("index.html",
+                             hashtag_index,
+                             title="Hashtag Index",
+                             level=1,
+                             links=links)
 
         for hashtag, docs in hashtags:
-            out_fn = join(hashtag_dir, '{}.{}'.format(hashtag, "html"))
+            out_fn = join(hashtag_dir, hashtag + ".html")
 
-            # TODO: self.render_template(level = 1) !!!
+            self.log.debug("  # " + out_fn)
 
-            self.log.debug("  # %s" % out_fn)
-            with open(out_fn, "w") as out:
-                out.write("""<a href="../index.html">up</a> |
-                            <a href="index.html">index</a>
-                            <br>""")
-                out.write("<ul>")
-                for d in docs:
-                    link = "<li><a href='../{0.namespace}/{0.docid}.html'>{0.docid}</a></li>" \
-                        .format(d)
-                    out.write(link)
-                out.write("</ul>")
+            links = [('{0.docid}'.format(d),
+                      '../{0.namespace}/{0.docid}.html'.format(d)) for d in docs]
+            self.render_template("index.html",
+                                 out_fn,
+                                 title="Hashtag #" + hashtag,
+                                 level=1,
+                                 links=links)

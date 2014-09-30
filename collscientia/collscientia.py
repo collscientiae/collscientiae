@@ -13,6 +13,7 @@ from os import makedirs
 
 
 class CollScientia(object):
+
     """
     This is the main class of this module.
 
