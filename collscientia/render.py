@@ -38,7 +38,8 @@ class OutputRenderer(object):
         self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
 
         config = yaml.load(open(join(self.theme, "config.yaml")))
-        self.j2env.globals.update(config)
+        if config is not None:
+            self.j2env.globals.update(config)
 
         self.j2env.filters["prefix"] = filter_prefix
 

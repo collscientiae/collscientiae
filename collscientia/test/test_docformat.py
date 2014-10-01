@@ -1,15 +1,41 @@
 from os.path import join, abspath, dirname
 import unittest
 import logging
+from collscientia.collscientia import CollScientia
 from collscientia.process import ContentProcessor, CollScientiaDB
 
 
 class DocformatTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        from tempfile import mkdtemp
+        from os.path import join
+        cls.src = mkdtemp()
+        with open(join(cls.src, "config.yaml"), "w") as cy:
+            cy.write("")
+
+        cls.theme = mkdtemp()
+        with open(join(cls.theme, "config.yaml"), "w") as cy:
+            cy.write("")
+
+        cls.targ = mkdtemp()
+
+    @classmethod
+    def tearDownClass(cls):
+        from shutil import rmtree
+        rmtree(cls.src)
+        rmtree(cls.targ)
+        rmtree(cls.theme)
+
     def setUp(self):
-        self.log = log = logging.getLogger("TEST")
-        self.db = db = CollScientiaDB(log)
-        self.processor = ContentProcessor(log, db)
+
+        self.cs = cs = CollScientia(DocformatTest.src,
+                                    DocformatTest.theme,
+                                    DocformatTest.targ)
+        cs._log = logging.getLogger("TEST")
+        self.db = db = CollScientiaDB(cs)
+        self.processor = ContentProcessor(cs)
 
     def test_one(self):
         fn = join(dirname(abspath(__file__)), "docformat.md")
