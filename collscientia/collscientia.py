@@ -1,17 +1,29 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
-from os.path import abspath, normpath, isdir, join
-import codecs
-from collscientia.models import DocumentationModule
+from .models import DocumentationModule
 from .utils import get_yaml, get_markdown, create_logger
 from .db import CollScientiaDB, DuplicateDocumentError
 from .models import Document
 from .process import ContentProcessor
 from .render import OutputRenderer
-from os.path import exists
-from shutil import rmtree
-from os import makedirs
 
+import jinja2 as j2
+import yaml
+
+@j2.contextfilter
+def filter_prefix(ctx, link):
+    """
+    Prepend level-times "../" to the given string.
+    Used to go up in the directory hierarchy.
+    Yes, one could also do absolute paths, but then it is harder to debug locally!
+    """
+
+    level = ctx.get("level", 0)
+    if level == 0:
+        return link
+    path = ['..'] * level
+    path.append(link)
+    return '/'.join(path)
 
 class CollScientia(object):
 
@@ -23,6 +35,8 @@ class CollScientia(object):
     module_blacklist = [".git", "hashtag", "_testing"]
 
     def __init__(self, src, theme, targ):
+        from os.path import abspath, normpath, isdir
+
         self._log = create_logger()
 
         self._src = abspath(normpath(src))
@@ -34,6 +48,19 @@ class CollScientia(object):
 
         if not isdir(self.theme):
             raise ValueError("theme must be a directory")
+
+
+
+        from os.path import join
+        self.tmpl_dir = join(self.theme, "src")
+        j2loader = j2.FileSystemLoader(self.tmpl_dir)
+        self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
+        config = yaml.load(open(join(self.theme, "config.yaml")))
+        if config is not None:
+            self.j2env.globals.update(config)
+
+        self.j2env.filters["prefix"] = filter_prefix
+
 
         self._db = CollScientiaDB(self)
         self.processor = ContentProcessor(self)
@@ -61,11 +88,12 @@ class CollScientia(object):
         return self._db
 
     def read_config(self):
+        from os.path import join
         config_fn = join(self.src, "config.yaml")
         return get_yaml(config_fn, all=False)
 
     def get_documents(self):
-        from os.path import join, exists, splitext, relpath, sep
+        from os.path import join, isdir, splitext, relpath, sep
         from os import walk, listdir
 
         for doc_dir in [join(self.src, _) for _ in listdir(self.src)]:
@@ -114,6 +142,9 @@ class CollScientia(object):
                 raise DuplicateDocumentError(m)
 
     def check_dirs(self):
+        from os import makedirs
+        from os.path import exists
+        from shutil import rmtree
         if exists(self.targ):
             rmtree(self.targ)
         makedirs(self.targ)

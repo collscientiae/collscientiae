@@ -4,25 +4,6 @@ from os.path import abspath, normpath, isdir, join, relpath, splitext
 from os import makedirs, walk, link
 from .models import Document
 import codecs
-import jinja2 as j2
-import yaml
-
-
-@j2.contextfilter
-def filter_prefix(ctx, link):
-    """
-    Prepend level-times "../" to the given string.
-    Used to go up in the directory hierarchy.
-    Yes, one could also do absolute paths, but then it is harder to debug locally!
-    """
-
-    level = ctx.get("level", 0)
-    if level == 0:
-        return link
-    path = ['..'] * level
-    path.append(link)
-    return '/'.join(path)
-
 
 class OutputRenderer(object):
 
@@ -32,16 +13,9 @@ class OutputRenderer(object):
         self.src = collscientia.src
         self.theme = collscientia.theme
         self.targ = collscientia.targ
+        self.j2env = collscientia.j2env
+        self.tmpl_dir = collscientia.tmpl_dir
 
-        self.tmpl_dir = join(self.theme, "src")
-        j2loader = j2.FileSystemLoader(self.tmpl_dir)
-        self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
-
-        config = yaml.load(open(join(self.theme, "config.yaml")))
-        if config is not None:
-            self.j2env.globals.update(config)
-
-        self.j2env.filters["prefix"] = filter_prefix
 
     def render_template(self, template_fn, target_fn, **data):
         tmpl = self.j2env.get_template(template_fn)

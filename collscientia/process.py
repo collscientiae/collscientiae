@@ -95,6 +95,9 @@ class ContentProcessor(object):
         self.document = None
         assert isinstance(logger, Logger)
         self.logger = logger
+
+        self.j2env = collscientia.j2env
+
         self.md = md = markdown.Markdown(
             extensions=['markdown.extensions.toc',
                         'markdown.extensions.extra',
@@ -170,6 +173,12 @@ class ContentProcessor(object):
         assert isinstance(document, Document)
         self.document = document
         html = self.md.convert(document.md_raw)
+        html = """\
+        {% include "macros.html" %}
+        {% from "macros.html" import KNOWL with context %}
+        """ + html
+        print html
+        html = self.j2env.from_string(html).render()
         meta = self.get_metadata()
 
         return html, meta
