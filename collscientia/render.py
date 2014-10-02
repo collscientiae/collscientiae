@@ -55,13 +55,14 @@ class OutputRenderer(object):
         This copies static files into the output file tree.
         """
         self.log.info("copying static files")
+        ignored_static_files = [".scss", ".sass"]
         for dir in ["static", "img"]:
             static_dir = join(self.tmpl_dir, dir)
             target_dir = join(self.targ, dir)
             makedirs(target_dir)
             for path, _, filenames in walk(static_dir):
                 for fn in filenames:
-                    if splitext(fn)[-1] in [".scss", ".sass"]:
+                    if fn.startswith("_") or splitext(fn)[-1] in ignored_static_files:
                         continue
                     filepath = join(path, fn)
                     relative = relpath(path, static_dir)

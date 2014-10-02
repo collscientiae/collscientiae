@@ -29,7 +29,6 @@ class DocformatTest(unittest.TestCase):
         rmtree(cls.theme)
 
     def setUp(self):
-
         self.cs = cs = CollScientia(DocformatTest.src,
                                     DocformatTest.theme,
                                     DocformatTest.targ)

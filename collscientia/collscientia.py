@@ -1,7 +1,8 @@
 # -*- coding: utf8 -*-
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import
 from os.path import abspath, normpath, isdir, join
 import codecs
+from collscientia.models import DocumentationModule
 from .utils import get_yaml, get_markdown, create_logger
 from .db import CollScientiaDB, DuplicateDocumentError
 from .models import Document
@@ -19,7 +20,7 @@ class CollScientia(object):
 
 
     """
-    module_blacklist = ["hashtag", "tests"]
+    module_blacklist = [".git", "hashtag", "_testing"]
 
     def __init__(self, src, theme, targ):
         self._log = create_logger()
@@ -64,29 +65,33 @@ class CollScientia(object):
         return get_yaml(config_fn, all=False)
 
     def get_documents(self):
-        from os.path import join, exists, splitext, relpath, pathsep
-        from os import walk
+        from os.path import join, exists, splitext, relpath, sep
+        from os import walk, listdir
 
-        for module in self.config["modules"]:
-            if module in CollScientia.module_blacklist:
-                raise ValueError("module %s not allowed")
-            doc_dir = join(self.src, module)
-            assert exists(doc_dir), \
-                "Module '%s' does not exist." % doc_dir
+        for doc_dir in [join(self.src, _) for _ in listdir(self.src)]:
+            if not isdir(doc_dir):
+                continue
+            mod_dir = doc_dir.split(sep)[-1]
+            if mod_dir in CollScientia.module_blacklist:
+                self.log.warning("skipping module '%s'" % doc_dir)
+                continue
             for path, _, filenames in walk(doc_dir):
+                # self.log.debug("DOCID: %s" % docid)
+                mod_config = get_yaml(join(doc_dir, "config.yaml"))
+                module = DocumentationModule(doc_dir, **mod_config)
                 for fn in filenames:
+                    if fn == "config.yaml":
+                        continue
                     filepath = join(path, fn)
-                    # yield module, filepath, get_yaml(filepath)
                     basename, ext = splitext(fn)
                     assert ext == ".md", \
-                        'fn: {0:s} (splitext: {1:s})'.format(fn, ext)
+                        'fn: {0} (splitext: {1})'.format(fn, ext)
                     # self.log.debug("RELPATH: %s" % relpath(path, doc_dir))
-                    id_path = relpath(path, doc_dir).split(pathsep)
+                    id_path = relpath(path, doc_dir).split(sep)
                     if id_path[0] == ".":
                         id_path.pop(0)
                     id_path.append(basename)
                     docid = '.'.join(id_path)
-                    # self.log.debug("DOCID: %s" % docid)
                     yield module, filepath, docid, get_markdown(filepath)
 
     def process(self):
@@ -97,7 +102,7 @@ class CollScientia(object):
                 doc = Document(docid=docid, md_raw=md_raw)
                 html, meta = self.processor.convert(doc)
                 doc.update(output=html, **meta)
-                doc.namespace = module
+                doc.namespace = module.namespace
                 self.db.register(doc)
 
             except DuplicateDocumentError as dde:
@@ -124,6 +129,6 @@ if __name__ == "__main__":
         "Need three arguments, first ist the source directory," \
         "the second the theme directory (containing an 'src' directory with" \
         "'static' files and the html templates) and" \
-        "third is the target directory where everything is rendered into."
+        "third is the empty target directory where everything is rendered into."
     r = CollScientia(*sys.argv[1:])
     r.render()

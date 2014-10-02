@@ -40,11 +40,21 @@ class YAMLObjectCallingInit(yaml.YAMLObject):
         return cls(**fields)
 
 
-class DocumentationModule(YAMLObjectCallingInit):
-    yaml_tag = '!documentation'
+class DocumentationModule():
+    def __init__(self, path, **config):
+        # name and description are mandatory entries
+        self.name = config.pop("name")
+        self.description = config.pop("description")
+        assert "path" not in config
+        assert "namespace" not in config
+        self.__dict__.update(**config)
+        self.path = path
+        from os.path import sep
+        self.namespace = path.split(sep)[-1]
+
 
     def __str__(self):
-        return str(filter(lambda k_v: not k_v[0].startswith("_"), self.__dict__.iteritems()))
+        return "Module {}@{}".format(self.name, self.path)
 
 
 class Section(YAMLObjectCallingInit):
