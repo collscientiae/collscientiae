@@ -67,8 +67,10 @@ def create_logger(level=logging.DEBUG):
     logger.addHandler(logger_sh)
     return logger
 
+
 def get_yamls(path):
     return get_yaml(path, all=True)
+
 
 def get_yaml(path, all=False):
     import yaml

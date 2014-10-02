@@ -41,6 +41,7 @@ class YAMLObjectCallingInit(yaml.YAMLObject):
 
 
 class DocumentationModule():
+
     def __init__(self, path, **config):
         # name and description are mandatory entries
         self.name = config.pop("name")
@@ -51,7 +52,23 @@ class DocumentationModule():
         self.path = path
         from os.path import sep
         self.namespace = path.split(sep)[-1]
+        # maps to documents via their unique ID
+        self._documents = {}
 
+    def __getitem__(self, key):
+        return self._documents[key]
+
+    def __setitem__(self, key, item):
+        self._documents[key] = item
+
+    def iteritems(self):
+        return self._documents.iteritems()
+
+    def keys(self):
+        return self._documents.keys()
+
+    def __contains__(self, item):
+        return item in self._documents
 
     def __str__(self):
         return "Module {}@{}".format(self.name, self.path)

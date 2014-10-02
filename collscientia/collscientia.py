@@ -75,10 +75,13 @@ class CollScientia(object):
             if mod_dir in CollScientia.module_blacklist:
                 self.log.warning("skipping module '%s'" % doc_dir)
                 continue
+
+            mod_config = get_yaml(join(doc_dir, "config.yaml"))
+            module = DocumentationModule(doc_dir, **mod_config)
+            self.db.register_module(module)
+
             for path, _, filenames in walk(doc_dir):
                 # self.log.debug("DOCID: %s" % docid)
-                mod_config = get_yaml(join(doc_dir, "config.yaml"))
-                module = DocumentationModule(doc_dir, **mod_config)
                 for fn in filenames:
                     if fn == "config.yaml":
                         continue

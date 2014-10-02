@@ -79,17 +79,19 @@ class OutputRenderer(object):
         self.output_hashtags()
 
     def output_index(self):
-        target_fn = join(self.targ, "index.html")
-        links = [(_, "%s/index.html" % _) for _ in self.db.docs.keys()]
-        self.render_template("index.html", target_fn,
-                             links=links)
+        index_fn = join(self.targ, "index.html")
+        modules = sorted(self.db.modules.values(),
+                         key=lambda _: _.name)
+        self.render_template("index_modules.html",
+                             index_fn,
+                             modules=modules)
 
     def output_knowls(self):
-        for ns, docs in self.db.docs.iteritems():
+        for ns, modules in self.db.modules.iteritems():
             knowl_dir = join(self.targ, ns, "_knowl")
             assert not isdir(knowl_dir)
             makedirs(knowl_dir)
-            for key, doc in docs.iteritems():
+            for key, doc in modules.iteritems():
                 out_fn = join(knowl_dir, '{}.{}'.format(doc.docid, "html"))
 
                 # TODO: self.render_template(level = 2) !!!
@@ -98,21 +100,21 @@ class OutputRenderer(object):
                     out.write("knowl: %s" % doc.docid)
 
     def output_documents(self):
-        for ns, docs in self.db.docs.iteritems():
+        for ns, module in self.db.modules.iteritems():
             doc_dir = join(self.targ, ns)
             makedirs(doc_dir)
 
             doc_index = join(doc_dir, "index.html")
-            links = [(_, _ + ".html") for _ in docs.keys()]
+            links = [(_, _ + ".html") for _ in module.keys()]
             links.insert(0, ("Knowls", "_knowl/index.html"))
 
             self.render_template("index.html",
                                  doc_index,
-                                 title="%s Index" % ns.title(),
+                                 title=module.name,
                                  level=1,
                                  links=links)
 
-            for key, doc in docs.iteritems():
+            for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
                 out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
                 self.log.debug("  + %s" % out_fn)
