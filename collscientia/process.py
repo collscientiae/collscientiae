@@ -22,29 +22,44 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
         super(HashTagPattern, self).__init__(pattern)
 
     def handleMatch(self, m):
-        el = markdown.util.etree.Element("a")
+        from markdown.util import etree
+        a = etree.Element("a")
         ht = m.group(2).lower()
         self.cp.register_hashtag(ht)
-        el.set('href', '../hashtag/{}.html'.format(ht))
-        el.text = '#' + m.group(2)
-        return el
+        a.set('href', '../hashtag/{}.html'.format(ht))
+        a.text = '#' + m.group(2)
+        return a
 
 
 class KnowlTagPatternWithTitle(markdown.inlinepatterns.Pattern):
+    def __init__(self, pattern, cp):
+        self.cp = cp
+        super(KnowlTagPatternWithTitle, self).__init__(pattern)
 
     def handleMatch(self, m):
+        from markdown.util import etree
+        from .models import namespace_pattern
         tokens = m.group(2).split("|")
         kid = tokens[0].strip()
         kidsplit = kid.split("/")
         assert knowl_id_pattern.match(kidsplit[-1]), "Knowl ID '%s' invalid" % kidsplit[-1]
         assert 1 <= len(kidsplit) <= 2
         if len(kidsplit) == 2:
-            from .models import namespace_pattern
-            assert namespace_pattern.match(kidsplit[0])
+            target_ns = kidsplit[0]
+        else:
+            target_ns = self.cp.document.namespace
+        target_ns = self.cp.cs.remap_module(self.cp.document.namespace, target_ns)
+        assert namespace_pattern.match(target_ns)
+        kid = target_ns + "/" + kidsplit[-1]
+        self.cp.register_knowl(kid)
+        a = etree.Element("a")
+        a.set("knowl", kid)
         if len(tokens) > 1:
             t = ''.join(tokens[1:])
-            return "{{ KNOWL('%s', title='%s') }}" % (kid, t.strip())
-        return "{{ KNOWL('%s') }}" % kid
+            a.text = t.strip()
+        else:
+            a.text = kidsplit[-1]
+        return a
 
 
 class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor):
@@ -87,18 +102,20 @@ class ContentProcessor(object):
     In the future, it might also be able to transform to LaTeX or PDF.
     """
 
-    def __init__(self, collscientia):
-        db = collscientia.db
-        logger = collscientia.log
+    def __init__(self, cs):
+        self.cs = cs
+        db = cs.db
+        logger = cs.log
         assert isinstance(db, CollScientiaDB)
         self.db = db
         self.document = None
         assert isinstance(logger, Logger)
         self.logger = logger
+        self.j2env = cs.j2env
+        self.md = self.init_md()
 
-        self.j2env = collscientia.j2env
-
-        self.md = md = markdown.Markdown(
+    def init_md(self):
+        md = markdown.Markdown(
             extensions=['markdown.extensions.toc',
                         'markdown.extensions.extra',
                         'markdown.extensions.sane_lists',
@@ -115,24 +132,31 @@ class ContentProcessor(object):
 
         # double `` backtick `` for ASCIIMath
         # hope this doesn't confuse with <code> single backticks
-        md.inlinePatterns.add('mathjax``', IgnorePattern(r'(?<![\\`])(``.+?``)'), '<escape')
+        md.inlinePatterns.add('mathjax``',
+                              IgnorePattern(r'(?<![\\`])(``.+?``)'),
+                              '<escape')
 
         # Tell markdown to turn hashtags into search urls
         hashtag_keywords_rex = r'#([a-zA-Z][a-zA-Z0-9-_]{1,})\b'
-        self.md.inlinePatterns.add('hashtag',
+        md.inlinePatterns.add('hashtag',
                                    HashTagPattern(hashtag_keywords_rex, self),
                                    '<escape')
 
         # Tells markdown to process "wikistyle" knowls with optional title
-        # should cover {{ KID }} and {{ KID | title }}
         knowltagtitle_regex = r'knowl\[\[([^\]]+)\]\]'
-        md.inlinePatterns.add('knowltagtitle', KnowlTagPatternWithTitle(knowltagtitle_regex), '<escape')
+        md.inlinePatterns.add('knowltagtitle',
+                              KnowlTagPatternWithTitle(knowltagtitle_regex, self),
+                              '<escape')
 
         # codeblocks with plot:: or example:: prefixes
         md.parser.blockprocessors["code"] = CollScientiaCodeBlockProcessor(md.parser)
+        return md
 
     def register_hashtag(self, hashtag):
         self.db.register_hashtag(hashtag, self.document)
+
+    def register_knowl(self, knowl_id):
+        self.db.register_knowl(knowl_id)
 
     def get_metadata(self):
         meta = self.md.Meta.copy()
@@ -173,12 +197,9 @@ class ContentProcessor(object):
         assert isinstance(document, Document)
         self.document = document
         html = self.md.convert(document.md_raw)
-        html = """\
-        {% include "macros.html" %}
-        {% from "macros.html" import KNOWL with context %}
-        """ + html
-        print html
+        html = """{% include "macros.html" %}\n""" + html
         html = self.j2env.from_string(html).render()
+        print html
         meta = self.get_metadata()
 
         return html, meta

@@ -40,7 +40,7 @@ class YAMLObjectCallingInit(yaml.YAMLObject):
         return cls(**fields)
 
 
-class DocumentationModule():
+class DocumentationModule(object):
 
     def __init__(self, path, **config):
         # name and description are mandatory entries
@@ -89,7 +89,7 @@ class Document(object):
 
     allowed_types = ["document", "tutorial", "example", "reference"]
 
-    def __init__(self, docid, md_raw, ns=None):
+    def __init__(self, docid, md_raw, ns):
         assert docid is not None and id_pattern.match(docid)
         self.docid = docid
         self._ns = ns

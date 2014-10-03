@@ -50,3 +50,6 @@ class CollScientiaDB(object):
         assert isinstance(module, DocumentationModule)
         assert module.namespace not in self.modules
         self.modules[module.namespace] = module
+
+    def register_knowl(self, knowl_id):
+        self.log.warning("NYI: register_knowl '%s'" % knowl_id)

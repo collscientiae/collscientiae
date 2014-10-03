@@ -87,10 +87,25 @@ class CollScientia(object):
     def db(self):
         return self._db
 
+    def remap_module(self, origin, target):
+        """
+        Uses the dictionary in the documentation configuration's
+        `config.yaml` to remap the module names in order to avoid
+        conflicts between them.
+
+        :param origin: origin namespace
+        :param target: target namespace to rename
+        :return:
+        """
+        rm = self.config.get("remapping", {})
+        if origin in rm:
+            return rm[origin].get(target, target)
+        return target
+
     def read_config(self):
         from os.path import join
         config_fn = join(self.src, "config.yaml")
-        return get_yaml(config_fn, all=False)
+        return get_yaml(config_fn)
 
     def get_documents(self):
         from os.path import join, isdir, splitext, relpath, sep
@@ -130,10 +145,11 @@ class CollScientia(object):
 
         for module, filepath, docid, md_raw in self.get_documents():
             try:
-                doc = Document(docid=docid, md_raw=md_raw)
+                doc = Document(docid=docid,
+                               md_raw=md_raw,
+                                ns = module.namespace)
                 html, meta = self.processor.convert(doc)
                 doc.update(output=html, **meta)
-                doc.namespace = module.namespace
                 self.db.register(doc)
 
             except DuplicateDocumentError as dde:
