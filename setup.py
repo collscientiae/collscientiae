@@ -7,8 +7,10 @@ setup(
     packages=['collscientia'],
     test_suite='nose.collector',
     url='',
-    license='Apache 2.0',
+    license='LICENSE.txt',
     author='Harald Schilly',
     author_email='harald@schil.ly',
-    description='Collection of Knowledge - an advanced system for building documentations'
+    description='Collection of Knowledge: ' +
+    'an advanced system for building modularized documentations',
+    install_requires = open("requirements.txt").readlines()
 )

@@ -5,6 +5,7 @@ from os import makedirs, walk, link
 from .models import Document
 import codecs
 
+
 class OutputRenderer(object):
 
     def __init__(self, collscientia):
@@ -15,7 +16,6 @@ class OutputRenderer(object):
         self.targ = collscientia.targ
         self.j2env = collscientia.j2env
         self.tmpl_dir = collscientia.tmpl_dir
-
 
     def render_template(self, template_fn, target_fn, **data):
         tmpl = self.j2env.get_template(template_fn)

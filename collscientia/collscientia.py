@@ -10,6 +10,7 @@ from .render import OutputRenderer
 import jinja2 as j2
 import yaml
 
+
 @j2.contextfilter
 def filter_prefix(ctx, link):
     """
@@ -24,6 +25,7 @@ def filter_prefix(ctx, link):
     path = ['..'] * level
     path.append(link)
     return '/'.join(path)
+
 
 class CollScientia(object):
 
@@ -49,8 +51,6 @@ class CollScientia(object):
         if not isdir(self.theme):
             raise ValueError("theme must be a directory")
 
-
-
         from os.path import join
         self.tmpl_dir = join(self.theme, "src")
         j2loader = j2.FileSystemLoader(self.tmpl_dir)
@@ -60,7 +60,6 @@ class CollScientia(object):
             self.j2env.globals.update(config)
 
         self.j2env.filters["prefix"] = filter_prefix
-
 
         self._db = CollScientiaDB(self)
         self.processor = ContentProcessor(self)
@@ -147,7 +146,7 @@ class CollScientia(object):
             try:
                 doc = Document(docid=docid,
                                md_raw=md_raw,
-                                ns = module.namespace)
+                               ns=module.namespace)
                 html, meta = self.processor.convert(doc)
                 doc.update(output=html, **meta)
                 self.db.register(doc)

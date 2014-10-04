@@ -15,10 +15,13 @@ class CollScientiaDB(object):
     def __init__(self, collscientia):
         # maps a hashtag to list of documents
         self.log = collscientia.log
+
+        # sets of backlinks (from string to document)
         self.hashtags = defaultdict(set)
+        self.links = defaultdict(set)
+        self.knowls = defaultdict(set)
 
         # maps all module namespaces to modules
-        # and each module is a dict to the documents
         self.modules = {}
 
     def register(self, document):
@@ -32,10 +35,6 @@ class CollScientiaDB(object):
         self.modules[ns][docid] = document
         # self.log.debug(" + %s::%s" % (ns, docid))
 
-    def register_hashtag(self, hashtag, document):
-        # self.log.debug("   # %s" % hashtag)
-        self.hashtags[hashtag].add(document)
-
     def check_consistency(self):
         self.log.info("checking consistency")
         for ns, module in self.modules.iteritems():
@@ -46,14 +45,18 @@ class CollScientiaDB(object):
         # for ht, ids in self.hashtags.iteritems():
         # self.log.debug("  #%s -> %s" % (ht, ids))
 
+
     def register_module(self, module):
         assert isinstance(module, DocumentationModule)
         assert module.namespace not in self.modules
         self.modules[module.namespace] = module
 
-    def register_knowl(self, knowl_id):
-        self.log.warning("NYI: register_knowl '%s'" % knowl_id)
+    def register_hashtag(self, hashtag, document):
+        # self.log.debug("   # %s" % hashtag)
+        self.hashtags[hashtag].add(document)
 
+    def register_knowl(self, ns, knowl_id, document):
+        self.knowls[(ns, knowl_id)].add(document)
 
-    def register_link(self, link_id):
-        self.log.warning("NYI: register_link '%s'" % link_id)
+    def register_link(self, ns, link_id, document):
+        self.links[(ns, link_id)].add(document)
