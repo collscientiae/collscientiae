@@ -53,3 +53,7 @@ class CollScientiaDB(object):
 
     def register_knowl(self, knowl_id):
         self.log.warning("NYI: register_knowl '%s'" % knowl_id)
+
+
+    def register_link(self, link_id):
+        self.log.warning("NYI: register_link '%s'" % link_id)
