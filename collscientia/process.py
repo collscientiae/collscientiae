@@ -193,6 +193,16 @@ class ContentProcessor(object):
                 # and join multilines
                 meta[key] = '\n'.join(meta[key])
 
+        # fixup seealso
+        if "seealso" in meta:
+            for sa in meta["seealso"]:
+                if len(sa) == 0:
+                    meta["seealso"].remove(sa)
+                else:
+                    assert document_id_pattern.match(sa), "ID '%s' not valid" % sa
+        else:
+            meta["seealso"] = []
+
         return meta
 
     def convert(self, document, target="html"):

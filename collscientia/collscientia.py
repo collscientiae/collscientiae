@@ -148,6 +148,9 @@ class CollScientia(object):
                                md_raw=md_raw,
                                ns=module.namespace)
                 html, meta = self.processor.convert(doc)
+
+                # convert to actual documents
+                meta["seealso"] = [module[_] for _ in meta["seealso"]]
                 doc.update(output=html, **meta)
                 self.db.register(doc)
 

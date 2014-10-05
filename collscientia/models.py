@@ -97,7 +97,7 @@ class Document(object):
 
     def update(self, output, title=None, authors=None,
                subtitle=None, abstract=None,
-               tags=None, type=None,
+               tags=None, type=None, backlinks = None,
                seealso=None):
         assert type and type in Document.allowed_types,\
             "type is '%s'" % type
@@ -105,7 +105,8 @@ class Document(object):
         self.title = title
         self.subtitle = subtitle
         self.abstract = abstract
-        self.seealso = seealso
+        self.seealso = seealso or []
+        self.backlinks = backlinks or []
         # output contains html (or latex) after processing the content
         self.output = output
         self.authors = authors
