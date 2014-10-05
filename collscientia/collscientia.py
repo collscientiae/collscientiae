@@ -144,9 +144,10 @@ class CollScientia(object):
 
         for module, filepath, docid, md_raw in self.get_documents():
             try:
+                ns = module.namespace
                 doc = Document(docid=docid,
                                md_raw=md_raw,
-                               ns=module.namespace)
+                               ns=ns)
                 html, meta = self.processor.convert(doc)
 
                 # convert to actual documents

@@ -18,7 +18,9 @@ class CollScientiaDB(object):
 
         # sets of backlinks (from string to document)
         self.hashtags = defaultdict(set)
-        self.links = defaultdict(set)
+        # would be cooler if these two are in DocumentationModule, but
+        # it can happen that the link exists before the module exists - TODO
+        self.backlinks = defaultdict(set)
         self.knowls = defaultdict(set)
 
         # maps all module namespaces to modules
@@ -45,6 +47,12 @@ class CollScientiaDB(object):
         # for ht, ids in self.hashtags.iteritems():
         # self.log.debug("  #%s -> %s" % (ht, ids))
 
+        for links in [self.backlinks, self.knowls]:
+            for (ns, docid), docs in links.iteritems():
+                assert ns in self.modules,\
+                    "illegal namespace '{}' in a knowl or link to {}".format(ns, docs)
+                assert docid in self.modules[ns],\
+                    "unkown ID '{}' in a knowl or link to {}".format(docid, docs)
 
     def register_module(self, module):
         assert isinstance(module, DocumentationModule)
@@ -59,4 +67,4 @@ class CollScientiaDB(object):
         self.knowls[(ns, knowl_id)].add(document)
 
     def register_link(self, ns, link_id, document):
-        self.links[(ns, link_id)].add(document)
+        self.backlinks[(ns, link_id)].add(document)

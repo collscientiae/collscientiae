@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 from os.path import abspath, normpath, isdir, join, relpath, splitext
 from os import makedirs, walk, link
+from collscientia.models import DocumentationModule
 from .models import Document
 import codecs
 
@@ -75,6 +76,7 @@ class OutputRenderer(object):
 
     def output_documents(self):
         for ns, module in self.db.modules.iteritems():
+            assert isinstance(module, DocumentationModule)
             doc_dir = join(self.targ, ns)
             makedirs(doc_dir)
 
@@ -91,11 +93,13 @@ class OutputRenderer(object):
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
                 out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
+                backlinks = self.db.backlinks[(module.namespace, key)]
                 self.log.debug("  + %s" % out_fn)
                 self.render_template("document.html",
                                      out_fn,
                                      title=doc.title,
                                      doc=doc,
+                                     backlinks=backlinks,
                                      level=1)
 
     def output_hashtags(self):

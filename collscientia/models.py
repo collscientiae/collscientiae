@@ -94,10 +94,11 @@ class Document(object):
         self.docid = docid
         self._ns = ns
         self.md_raw = md_raw
+        self.backlinks = None  # need to be set after *all* documents are processed
 
     def update(self, output, title=None, authors=None,
                subtitle=None, abstract=None,
-               tags=None, type=None, backlinks = None,
+               tags=None, type=None,
                seealso=None):
         assert type and type in Document.allowed_types,\
             "type is '%s'" % type
@@ -106,7 +107,6 @@ class Document(object):
         self.subtitle = subtitle
         self.abstract = abstract
         self.seealso = seealso or []
-        self.backlinks = backlinks or []
         # output contains html (or latex) after processing the content
         self.output = output
         self.authors = authors
@@ -126,6 +126,9 @@ class Document(object):
         assert self._ns is None, "Namespace can only be set once"
         assert namespace_pattern.match(ns)
         self._ns = ns
+
+    def __repr__(self):
+        return "Document[{0.namespace}/{0.docid}]".format(self)
 
 
 class Plot(Document):
