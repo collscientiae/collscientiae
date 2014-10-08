@@ -65,6 +65,8 @@ class CollScientia(object):
         self.processor = ContentProcessor(self)
         self.renderer = OutputRenderer(self)
         self.config = self.read_config()
+        self.j2env.globals['google_analytics'] = \
+            self.config['google_analytics'] if 'google_analytics' in self.config else None
 
     @property
     def log(self):
@@ -120,6 +122,7 @@ class CollScientia(object):
 
             mod_config = get_yaml(join(doc_dir, "config.yaml"))
             module = DocumentationModule(doc_dir, **mod_config)
+            self.j2env.globals.update(mod_config)
             self.db.register_module(module)
 
             for path, _, filenames in walk(doc_dir):
