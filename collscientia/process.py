@@ -31,6 +31,29 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
         a.text = '#' + m.group(2)
         return a
 
+class IncludePattern(markdown.inlinepatterns.Pattern):
+    def __init__(self, pattern, cp):
+        self.cp = cp
+        super(IncludePattern, self).__init__(pattern)
+
+    def handleMatch(self, m):
+        from markdown.util import etree
+        from .models import namespace_pattern
+        raw_id = m.group(2).strip()
+        idsplit = raw_id.split("/")
+        assert document_id_pattern.match(idsplit[-1]), "Document ID '%s' invalid" % idsplit[-1]
+        assert 1 <= len(idsplit) <= 2
+        if len(idsplit) == 2:
+            target_ns, doc_id = idsplit
+        else:
+            target_ns = self.cp.document.namespace
+            doc_id = idsplit[-1]
+        target_ns = self.cp.cs.remap_module(self.cp.document.namespace, target_ns)
+        assert namespace_pattern.match(target_ns)
+        link = target_ns + "/" + doc_id
+        section = etree.Element("section")
+        section.set("include", link)
+        return section
 
 class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
 
@@ -55,7 +78,7 @@ class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
             doc_id = kidsplit[-1]
         target_ns = self.cp.cs.remap_module(self.cp.document.namespace, target_ns)
         assert namespace_pattern.match(target_ns)
-        link = target_ns + "/" + kidsplit[-1]
+        link = target_ns + "/" + doc_id
         a = etree.Element("a")
         if type == "link":
             self.cp.db.register_link(target_ns, doc_id, self.cp.document)
@@ -144,8 +167,7 @@ class ContentProcessor(object):
         md.inlinePatterns.add('mathjax\\(', IgnorePattern(r'(\\\(.+?\\\))'), '<escape')
         md.inlinePatterns.add('mathjax\\[', IgnorePattern(r'(\\\[.+?\\\])'), '<escape')
 
-        # double `` backtick `` for ASCIIMath
-        # hope this doesn't confuse with <code> single backticks
+        # double '' for ASCIIMath (double backtick `` is <code>)
         md.inlinePatterns.add('mathjax``',
                               IgnorePattern(r'(?<![\\`])(``.+?``)'),
                               '<escape')
@@ -160,6 +182,11 @@ class ContentProcessor(object):
         linkandknowl_regex = r'(link|knowl)\[\[([^\]]+)\]\]'
         md.inlinePatterns.add('linkknowltag',
                               KnowlAndLinkPattern(linkandknowl_regex, self),
+                              '<escape')
+
+        include_pattern = r'include\[\[([^\]]+)\]\]'
+        md.inlinePatterns.add('includes',
+                              IncludePattern(include_pattern, self),
                               '<escape')
 
         # codeblocks with plot:: or example:: prefixes

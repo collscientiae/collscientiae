@@ -62,12 +62,14 @@ class OutputRenderer(object):
                              modules=modules)
 
     def output_knowls(self):
+        self.log.info("  ... and knowls")
         for ns, modules in self.db.modules.iteritems():
             knowl_dir = join(self.targ, ns, "_knowl")
             assert not isdir(knowl_dir)
             makedirs(knowl_dir)
             for key, doc in modules.iteritems():
                 out_fn = join(knowl_dir, '{}.{}'.format(doc.docid, "html"))
+                self.log.debug("K %s" % out_fn)
 
                 # TODO: self.render_template(level = 2) !!!
 
@@ -75,6 +77,7 @@ class OutputRenderer(object):
                     out.write("knowl: %s" % doc.docid)
 
     def output_documents(self):
+        self.log.info("processing document templates")
         for ns, module in self.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
             doc_dir = join(self.targ, ns)
@@ -103,6 +106,7 @@ class OutputRenderer(object):
                                      level=1)
 
     def output_hashtags(self):
+        self.log.info("  ... and hashtags")
         hashtag_dir = join(self.targ, "hashtag")
         makedirs(hashtag_dir)
         hashtags = sorted(self.db.hashtags.iteritems(),
