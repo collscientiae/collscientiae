@@ -98,31 +98,74 @@ class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
 
 class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor):
 
-    codeblock_pattern = re.compile(r"^([Pp]lot|[Ee]xample)::\s*$")
+    codeblock_pattern = re.compile(r"^(plot|example|python|sage|r)::\s*$", re.IGNORECASE)
+
+    def __init__(self, parser, cp):
+        self.cp = cp
+        self.log = cp.log
+        markdown.blockprocessors.CodeBlockProcessor.__init__(self, parser)
 
     def run(self, parent, blocks):
-        # interceptor: only match in such a case, where sibling matches the
-        # code_intro_pattern and remove it.
-
+        from markdown.util import etree, AtomicString
         sibling = self.lastChild(parent)
-        codeblocks = []
+        block = blocks.pop(0)
+        theRest = ''
+        if sibling and sibling.tag == "div" and len(sibling) \
+                    and sibling[0].tag == "script":
+            # The previous block was a code block. As blank lines do not start
+            # new code blocks, append this block to the previous, adding back
+            # linebreaks removed from the split into a list.
+            code = sibling[0]
+            block, theRest = self.detab(block)
+            code.text = AtomicString('%s\n%s\n' % (code.text, block.rstrip()))
+        else:
+            # This is a new codeblock. Create the elements and insert text.
+            outer = etree.SubElement(parent, "pre")
+            inner = etree.SubElement(outer, 'code')
 
-        if sibling is not None and sibling.text is not None:
-            if CollScientiaCodeBlockProcessor.codeblock_pattern.match(sibling.text):
-                while True:
-                    i = len(codeblocks)
-                    if markdown.blockprocessors.CodeBlockProcessor.test(self, parent, blocks[i]):
-                        code, dedented = self.detab(blocks[i])
-                        if dedented != '':
-                            raise ValueError(
-                                "There is dedented text below a codeblock.\n'%s'" % dedented)
-                        codeblocks.append(code)
-                    else:
-                        break
+            m = CollScientiaCodeBlockProcessor.codeblock_pattern.match(sibling.text)
+            if m:
+                mode = m.group(1)
+                if mode == "plot":
+                    self.log.warning("codeblock mode 'plot' not yet implemented")
+                elif mode in ["sage", "python", "r"]:
+                    outer.tag = "div"
+                    outer.set("class", "cell-%s" % mode)
+                    inner.tag = "script"
+                    inner.set("type", "text/x-sage")
+                parent.remove(sibling)
 
-        parent.remove(sibling)
+            block, theRest = self.detab(block)
+            inner.text = AtomicString('%s\n' % block.rstrip())
+        if theRest:
+            # This block contained unindented line(s) after the first indented
+            # line. Insert these lines as the first block of the master blocks
+            # list for future processing.
+            blocks.insert(0, theRest)
 
-        return markdown.blockprocessors.CodeBlockProcessor.run(self, parent, blocks)
+    # def run(self, parent, blocks):
+    #     # interceptor: only match in such a case, where sibling matches the
+    #     # code_intro_pattern and remove it.
+    #
+    #     sibling = self.lastChild(parent)
+    #     codeblocks = []
+    #
+    #     if sibling is not None and sibling.text is not None:
+    #         if CollScientiaCodeBlockProcessor.codeblock_pattern.match(sibling.text):
+    #             while True:
+    #                 i = len(codeblocks)
+    #                 if markdown.blockprocessors.CodeBlockProcessor.test(self, parent, blocks[i]):
+    #                     code, dedented = self.detab(blocks[i])
+    #                     if dedented != '':
+    #                         raise ValueError(
+    #                             "There is dedented text below a codeblock.\n'%s'" % dedented)
+    #                     codeblocks.append(code)
+    #                 else:
+    #                     break
+    #
+    #     parent.remove(sibling)
+    #
+    #     return markdown.blockprocessors.CodeBlockProcessor.run(self, parent, blocks)
 
 
 class ContentProcessor(object):
@@ -142,12 +185,12 @@ class ContentProcessor(object):
     def __init__(self, cs):
         self.cs = cs
         db = cs.db
-        logger = cs.log
+        log = cs.log
         assert isinstance(db, CollScientiaDB)
         self.db = db
         self.document = None
-        assert isinstance(logger, Logger)
-        self.logger = logger
+        assert isinstance(log, Logger)
+        self.log = log
         self.j2env = cs.j2env
         self.md = self.init_md()
 
@@ -190,7 +233,7 @@ class ContentProcessor(object):
                               '<escape')
 
         # codeblocks with plot:: or example:: prefixes
-        md.parser.blockprocessors["code"] = CollScientiaCodeBlockProcessor(md.parser)
+        md.parser.blockprocessors["code"] = CollScientiaCodeBlockProcessor(md.parser, self)
         return md
 
     def get_metadata(self):
