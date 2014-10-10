@@ -50,7 +50,6 @@ class OutputRenderer(object):
         self.copy_static_files()
         self.output_index()
         self.output_documents()
-        self.output_knowls()
         self.output_hashtags()
 
     def output_index(self):
@@ -60,21 +59,6 @@ class OutputRenderer(object):
         self.render_template("index_modules.html",
                              index_fn,
                              modules=modules)
-
-    def output_knowls(self):
-        self.log.info("  ... and knowls")
-        for ns, modules in self.db.modules.iteritems():
-            knowl_dir = join(self.targ, ns, "_knowl")
-            assert not isdir(knowl_dir)
-            makedirs(knowl_dir)
-            for key, doc in modules.iteritems():
-                out_fn = join(knowl_dir, '{}.{}'.format(doc.docid, "html"))
-                self.log.debug("K %s" % out_fn)
-
-                # TODO: self.render_template(level = 2) !!!
-
-                with codecs.open(out_fn, "w", "utf8") as out:
-                    out.write("knowl: %s" % doc.docid)
 
     def output_documents(self):
         self.log.info("processing document templates")

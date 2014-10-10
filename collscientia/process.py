@@ -1,5 +1,6 @@
 # coding: utf8
 from __future__ import absolute_import, unicode_literals
+import hashlib
 from logging import Logger
 import markdown
 import re
@@ -41,19 +42,35 @@ class IncludePattern(markdown.inlinepatterns.Pattern):
         from .models import namespace_pattern
         raw_id = m.group(2).strip()
         idsplit = raw_id.split("/")
-        assert document_id_pattern.match(idsplit[-1]), "Document ID '%s' invalid" % idsplit[-1]
+        doc_id = idsplit[-1].split()
+        if len(doc_id) == 1:
+            doc_id = doc_id[0]
+            label = None
+            limit = None
+        elif len(doc_id) == 2:
+            doc_id, label = doc_id
+            limit = None
+        elif len(doc_id) == 3:
+            doc_id, label, limit = doc_id
+        else:
+            raise ValueError("Include ID '%s' is invalid" % raw_id)
+        assert document_id_pattern.match(doc_id), "Document ID '%s' invalid" % doc_id
         assert 1 <= len(idsplit) <= 2
         if len(idsplit) == 2:
-            target_ns, doc_id = idsplit
+            target_ns = idsplit[0]
         else:
             target_ns = self.cp.document.namespace
-            doc_id = idsplit[-1]
         target_ns = self.cp.cs.remap_module(self.cp.document.namespace, target_ns)
         assert namespace_pattern.match(target_ns)
         link = target_ns + "/" + doc_id
-        section = etree.Element("section")
-        section.set("include", link)
-        return section
+        div = etree.Element("div")
+        div.set("include", link)
+        div.set("class", "include")
+        if label:
+            div.set("label", label)
+        if limit:
+            div.set("limit", limit)
+        return div
 
 class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
 
@@ -186,6 +203,9 @@ class ContentProcessor(object):
         self.cs = cs
         db = cs.db
         log = cs.log
+        self.doc_root_hash = hashlib.sha256()
+        # TODO update with documentation version and so on
+        # self.doc_root_hash.update()
         assert isinstance(db, CollScientiaDB)
         self.db = db
         self.document = None
@@ -275,6 +295,11 @@ class ContentProcessor(object):
 
         return meta
 
+    def get_root_hash(self):
+        rh =  self.doc_root_hash.hexdigest()
+        self.log.info("root hash: %s" % rh)
+        return rh
+
     def convert(self, document, target="html"):
         """
 
@@ -287,5 +312,9 @@ class ContentProcessor(object):
         html = self.j2env.from_string(html).render()
         # print html
         meta = self.get_metadata()
+
+        self.doc_root_hash.update(html.encode("utf8"))
+        metafixed = [(k, tuple(v) if isinstance(v, list) else v) for k, v in meta.iteritems()]
+        self.doc_root_hash.update(str(hash(frozenset(metafixed))))
 
         return html, meta

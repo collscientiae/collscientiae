@@ -175,6 +175,7 @@ class CollScientia(object):
         self.check_dirs()
         self.process()
         self.db.check_consistency()
+        self.j2env.globals["doc_root_hash"] = self.processor.get_root_hash()
         self.renderer.output()
 
 
