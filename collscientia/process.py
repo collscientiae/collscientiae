@@ -32,7 +32,9 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
         a.text = '#' + m.group(2)
         return a
 
+
 class IncludePattern(markdown.inlinepatterns.Pattern):
+
     def __init__(self, pattern, cp):
         self.cp = cp
         super(IncludePattern, self).__init__(pattern)
@@ -71,6 +73,7 @@ class IncludePattern(markdown.inlinepatterns.Pattern):
         if limit:
             div.set("limit", limit)
         return div
+
 
 class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
 
@@ -128,7 +131,7 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
         block = blocks.pop(0)
         theRest = ''
         if sibling and sibling.tag == "div" and len(sibling) \
-                    and sibling[0].tag == "script":
+                and sibling[0].tag == "script":
             # The previous block was a code block. As blank lines do not start
             # new code blocks, append this block to the previous, adding back
             # linebreaks removed from the split into a list.
@@ -161,8 +164,8 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             blocks.insert(0, theRest)
 
     # def run(self, parent, blocks):
-    #     # interceptor: only match in such a case, where sibling matches the
-    #     # code_intro_pattern and remove it.
+    # interceptor: only match in such a case, where sibling matches the
+    # code_intro_pattern and remove it.
     #
     #     sibling = self.lastChild(parent)
     #     codeblocks = []
@@ -296,7 +299,7 @@ class ContentProcessor(object):
         return meta
 
     def get_root_hash(self):
-        rh =  self.doc_root_hash.hexdigest()
+        rh = self.doc_root_hash.hexdigest()
         self.log.info("root hash: %s" % rh)
         return rh
 
