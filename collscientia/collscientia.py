@@ -163,6 +163,9 @@ class CollScientia(object):
                 m = "{:s} in {:s}".format(dde.message, filepath)
                 raise DuplicateDocumentError(m)
 
+        # after we know all the output, this hash contains everything
+        self.j2env.globals["doc_root_hash"] = self.processor.get_root_hash()
+
     def check_dirs(self):
         from os import makedirs
         from os.path import exists
@@ -175,7 +178,6 @@ class CollScientia(object):
         self.check_dirs()
         self.process()
         self.db.check_consistency()
-        self.j2env.globals["doc_root_hash"] = self.processor.get_root_hash()
         self.renderer.output()
 
 

@@ -69,7 +69,6 @@ class OutputRenderer(object):
 
             doc_index = join(doc_dir, "index.html")
             links = [(_, _ + ".html") for _ in module.keys()]
-            links.insert(0, ("Knowls", "_knowl/index.html"))
 
             self.render_template("index.html",
                                  doc_index,

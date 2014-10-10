@@ -84,6 +84,7 @@ class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
     def handleMatch(self, m):
         from markdown.util import etree
         from .models import namespace_pattern
+
         type = m.group(2)
         assert type in ["link", "knowl"]
         tokens = m.group(3).split("|")
@@ -107,6 +108,7 @@ class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
         elif type == "knowl":
             self.cp.db.register_knowl(target_ns, doc_id, self.cp.document)
             a.set("knowl", link)
+            a.set("href", "#")
 
         if len(tokens) > 1:
             t = ''.join(tokens[1:])
@@ -127,11 +129,13 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
 
     def run(self, parent, blocks):
         from markdown.util import etree, AtomicString
+        from uuid import uuid4
+
         sibling = self.lastChild(parent)
         block = blocks.pop(0)
         theRest = ''
-        if sibling and sibling.tag == "div" and len(sibling) \
-                and sibling[0].tag == "script":
+        if sibling and sibling.tag == "code" and len(sibling) \
+                and sibling[0].tag == "pre":
             # The previous block was a code block. As blank lines do not start
             # new code blocks, append this block to the previous, adding back
             # linebreaks removed from the split into a list.
@@ -140,8 +144,10 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             code.text = AtomicString('%s\n%s\n' % (code.text, block.rstrip()))
         else:
             # This is a new codeblock. Create the elements and insert text.
-            outer = etree.SubElement(parent, "pre")
-            inner = etree.SubElement(outer, 'code')
+            cell_id = str(uuid4())
+
+            outer = etree.SubElement(parent, "code")
+            inner = etree.SubElement(outer, 'pre')
 
             m = CollScientiaCodeBlockProcessor.codeblock_pattern.match(sibling.text)
             if m:
@@ -149,10 +155,20 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
                 if mode == "plot":
                     self.log.warning("codeblock mode 'plot' not yet implemented")
                 elif mode in ["sage", "python", "r"]:
-                    outer.tag = "div"
-                    outer.set("class", "cell-%s" % mode)
-                    inner.tag = "script"
+                    # outer.tag = "code"
+                    outer.set("mode", mode)
+                    outer.set("id", cell_id)
+
+                    # inner.tag = "pre"
                     inner.set("type", "text/x-sage")
+
+                    # "activation" link
+                    activate = etree.SubElement(parent, "a")
+                    activate.set("class", "activate_cell")
+                    activate.set("target", cell_id)
+                    activate.set("href", "#")
+                    activate.text = AtomicString("activate cell")
+
                 parent.remove(sibling)
 
             block, theRest = self.detab(block)

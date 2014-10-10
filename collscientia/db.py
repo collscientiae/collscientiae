@@ -67,4 +67,7 @@ class CollScientiaDB(object):
         self.knowls[(ns, knowl_id)].add(document)
 
     def register_link(self, ns, link_id, document):
+        # don't register links to itself
+        if document.namespace == ns and document.docid == link_id:
+            return
         self.backlinks[(ns, link_id)].add(document)
