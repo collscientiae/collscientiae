@@ -30,11 +30,10 @@ def filter_prefix(ctx, link):
 class CollScientia(object):
 
     """
-    This is the main class of this module.
-
+    This is the main class, holding everything together.
+    The `render()` method is starting the who process.
 
     """
-    module_blacklist = [".git", "hashtag", "_testing"]
 
     def __init__(self, src, theme, targ):
         from os.path import abspath, normpath, isdir
@@ -51,22 +50,22 @@ class CollScientia(object):
         if not isdir(self.theme):
             raise ValueError("theme must be a directory")
 
+        # setting up jinja2
         from os.path import join
         self.tmpl_dir = join(self.theme, "src")
         j2loader = j2.FileSystemLoader(self.tmpl_dir)
         self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
-        config = yaml.load(open(join(self.theme, "config.yaml")))
-        if config is not None:
-            self.j2env.globals.update(config)
-
+        config_theme = yaml.load(open(join(self.theme, "config.yaml")))
+        if config_theme is not None:
+            self.j2env.globals.update(config_theme)
         self.j2env.filters["prefix"] = filter_prefix
 
+        # initializing all the main components
         self._db = CollScientiaDB(self)
         self.processor = ContentProcessor(self)
         self.renderer = OutputRenderer(self)
         self.config = self.read_config()
-        self.j2env.globals['google_analytics'] = \
-            self.config['google_analytics'] if 'google_analytics' in self.config else None
+        self.j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
 
     @property
     def log(self):
@@ -112,13 +111,8 @@ class CollScientia(object):
         from os.path import join, isdir, splitext, relpath, sep
         from os import walk, listdir
 
-        for doc_dir in [join(self.src, _) for _ in listdir(self.src)]:
-            if not isdir(doc_dir):
-                continue
-            mod_dir = doc_dir.split(sep)[-1]
-            if mod_dir in CollScientia.module_blacklist:
-                self.log.warning("skipping module '%s'" % doc_dir)
-                continue
+        print self.config["modules"]
+        for doc_dir in [join(self.src, _) for _ in self.config["modules"]]:
 
             mod_config = get_yaml(join(doc_dir, "config.yaml"))
             module = DocumentationModule(doc_dir, **mod_config)

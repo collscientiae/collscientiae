@@ -165,7 +165,6 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
                     activate = etree.SubElement(parent, "a")
                     activate.set("class", "activate_cell")
                     activate.set("target", cell_id)
-                    activate.set("href", "#")
                     activate.text = AtomicString("activate cell")
 
                 parent.remove(sibling)
