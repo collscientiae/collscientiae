@@ -108,7 +108,6 @@ class KnowlAndLinkPattern(markdown.inlinepatterns.Pattern):
         elif type == "knowl":
             self.cp.db.register_knowl(target_ns, doc_id, self.cp.document)
             a.set("knowl", link)
-            a.set("href", "#")
 
         if len(tokens) > 1:
             t = ''.join(tokens[1:])
