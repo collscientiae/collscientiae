@@ -2,16 +2,16 @@
 from __future__ import absolute_import
 from os.path import abspath, normpath, isdir, join, relpath, splitext
 from os import makedirs, walk, link
-from collscientia.models import DocumentationModule
+from collscientiae.models import DocumentationModule
 from .models import Document
 import codecs
 
 
 class OutputRenderer(object):
 
-    def __init__(self, collscientia):
-        self.log = collscientia.log
-        self.cs = collscientia
+    def __init__(self, collscientiae):
+        self.log = collscientiae.log
+        self.cs = collscientiae
 
     def render_template(self, template_fn, target_fn, **data):
         tmpl = self.cs.j2env.get_template(template_fn)

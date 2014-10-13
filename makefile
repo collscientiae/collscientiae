@@ -1,4 +1,4 @@
-NAME=collscientia
+NAME=collscientiae
 
 .PHONY = clean style test
 

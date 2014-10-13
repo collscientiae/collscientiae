@@ -1,8 +1,8 @@
 from os.path import join, abspath, dirname
 import unittest
 import logging
-from collscientia.collscientia import CollScientia
-from collscientia.process import ContentProcessor, CollScientiaDB
+from collscientiae.collscientia import CollScientia
+from collscientiae.process import ContentProcessor, CollScientiaeDB
 
 
 class DocformatTest(unittest.TestCase):
@@ -33,12 +33,12 @@ class DocformatTest(unittest.TestCase):
                                     DocformatTest.theme,
                                     DocformatTest.targ)
         cs._log = logging.getLogger("TEST")
-        self.db = db = CollScientiaDB(cs)
+        self.db = db = CollScientiaeDB(cs)
         self.processor = ContentProcessor(cs)
 
     def test_one(self):
         fn = join(dirname(abspath(__file__)), "docformat.md")
-        from collscientia.models import Document
+        from collscientiae.models import Document
         with open(fn, "r") as data:
             doc = Document("test.1", data.read())
             html, meta = self.processor.convert(doc)

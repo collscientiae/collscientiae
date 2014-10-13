@@ -58,7 +58,7 @@ class ColoredFormatter(logging.Formatter):
 
 
 def create_logger(level=logging.DEBUG):
-    logger = logging.getLogger("collscientia")
+    logger = logging.getLogger("collscientiae")
     logger.addFilter(CollScientiaLoggingFilter())
     logger.setLevel(level)
     logger_sh = logging.StreamHandler()

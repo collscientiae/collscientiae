@@ -1,14 +1,14 @@
 from distutils.core import setup
-from collscientia import __version__
+from collscientiae import __version__
 r"""
-CollScientia -- Collection of Knowledge
+CollScientiae -- Collection of Knowledge
 
 """
 
 setup(
-    name='collscientia',
+    name='collscientiae',
     version=__version__,
-    packages=['collscientia'],
+    packages=['collscientiae'],
     test_suite='nose.collector',
     url='',
     license='LICENSE.txt',

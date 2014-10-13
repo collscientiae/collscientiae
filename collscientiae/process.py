@@ -5,7 +5,7 @@ from logging import Logger
 import markdown
 import re
 from .models import Document
-from .db import CollScientiaDB
+from .db import CollScientiaeDB
 
 document_id_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_.]+$")
 a_href_pattern = re.compile(r"<(a|A)[^\>]+?href=")
@@ -223,7 +223,7 @@ class ContentProcessor(object):
         self.doc_root_hash = hashlib.sha256()
         # TODO update with documentation version and so on
         # self.doc_root_hash.update()
-        assert isinstance(db, CollScientiaDB)
+        assert isinstance(db, CollScientiaeDB)
         self.db = db
         self.document = None
         assert isinstance(log, Logger)

@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from .models import DocumentationModule
 from .utils import get_yaml, get_markdown, create_logger
-from .db import CollScientiaDB, DuplicateDocumentError
+from .db import CollScientiaeDB, DuplicateDocumentError
 from .models import Document
 from .process import ContentProcessor
 from .render import OutputRenderer
@@ -27,7 +27,7 @@ def filter_prefix(ctx, link):
     return '/'.join(path)
 
 
-class CollScientia(object):
+class CollScientiae(object):
 
     """
     This is the main class, holding everything together.
@@ -61,7 +61,7 @@ class CollScientia(object):
         self.j2env.filters["prefix"] = filter_prefix
 
         # initializing all the main components
-        self._db = CollScientiaDB(self)
+        self._db = CollScientiaeDB(self)
         self.processor = ContentProcessor(self)
         self.renderer = OutputRenderer(self)
         self.j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
@@ -179,5 +179,5 @@ if __name__ == "__main__":
         "the second the theme directory (containing an 'src' directory with" \
         "'static' files and the html templates) and" \
         "third is the empty target directory where everything is rendered into."
-    r = CollScientia(*sys.argv[1:])
+    r = CollScientiae(*sys.argv[1:])
     r.render()

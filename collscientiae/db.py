@@ -10,11 +10,11 @@ class DuplicateDocumentError(Exception):
         super(DuplicateDocumentError, self).__init__(msg)
 
 
-class CollScientiaDB(object):
+class CollScientiaeDB(object):
 
-    def __init__(self, collscientia):
+    def __init__(self, collscientiae):
         # maps a hashtag to list of documents
-        self.log = collscientia.log
+        self.log = collscientiae.log
 
         # sets of backlinks (from string to document)
         self.hashtags = defaultdict(set)
