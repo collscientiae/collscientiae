@@ -11,16 +11,10 @@ class OutputRenderer(object):
 
     def __init__(self, collscientia):
         self.log = collscientia.log
-        self.config = collscientia.config
-        self.db = collscientia.db
-        self.src = collscientia.src
-        self.theme = collscientia.theme
-        self.targ = collscientia.targ
-        self.j2env = collscientia.j2env
-        self.tmpl_dir = collscientia.tmpl_dir
+        self.cs = collscientia
 
     def render_template(self, template_fn, target_fn, **data):
-        tmpl = self.j2env.get_template(template_fn)
+        tmpl = self.cs.j2env.get_template(template_fn)
         html = tmpl.render(**data)
         with open(target_fn, "wb") as output:
             output.write(html.encode("utf-8"))
@@ -33,8 +27,8 @@ class OutputRenderer(object):
         self.log.info("copying static files")
         ignored_static_files = [".scss", ".sass"]
         for dir in ["static", "img"]:
-            static_dir = join(self.tmpl_dir, dir)
-            target_dir = join(self.targ, dir)
+            static_dir = join(self.cs.tmpl_dir, dir)
+            target_dir = join(self.cs.targ, dir)
             makedirs(target_dir)
             for path, _, filenames in walk(static_dir):
                 for fn in filenames:
@@ -47,25 +41,25 @@ class OutputRenderer(object):
                     link(filepath, targetpath)
 
     def output(self):
-        self.log.info("rendering into %s" % self.targ)
+        self.log.info("rendering into %s" % self.cs.targ)
         self.copy_static_files()
         self.output_index()
         self.output_documents()
         self.output_hashtags()
 
     def output_index(self):
-        index_fn = join(self.targ, "index.html")
+        index_fn = join(self.cs.targ, "index.html")
 
-        modules = [self.db.modules[_] for _ in self.config["modules"]]
+        modules = [self.cs.db.modules[_] for _ in self.cs.config["modules"]]
         self.render_template("index_modules.html",
                              index_fn,
                              modules=modules)
 
     def output_documents(self):
         self.log.info("processing document templates")
-        for ns, module in self.db.modules.iteritems():
+        for ns, module in self.cs.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
-            doc_dir = join(self.targ, ns)
+            doc_dir = join(self.cs.targ, ns)
             makedirs(doc_dir)
 
             doc_index = join(doc_dir, "index.html")
@@ -80,7 +74,7 @@ class OutputRenderer(object):
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
                 out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
-                backlinks = self.db.backlinks[(module.namespace, key)]
+                backlinks = self.cs.db.backlinks[(module.namespace, key)]
                 self.log.debug("  + %s" % out_fn)
                 seealso = [module[_] for _ in doc.seealso]
                 self.render_template("document.html",
@@ -93,9 +87,9 @@ class OutputRenderer(object):
 
     def output_hashtags(self):
         self.log.info("  ... and hashtags")
-        hashtag_dir = join(self.targ, "hashtag")
+        hashtag_dir = join(self.cs.targ, "hashtag")
         makedirs(hashtag_dir)
-        hashtags = sorted(self.db.hashtags.iteritems(),
+        hashtags = sorted(self.cs.db.hashtags.iteritems(),
                           key=lambda _: _[0])
 
         hashtag_index = join(hashtag_dir, "index.html")
