@@ -161,11 +161,11 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
                     # inner.tag = "pre"
                     inner.set("type", "text/x-sage")
 
-                    # "activation" link
-                    activate = etree.SubElement(parent, "a")
-                    activate.set("class", "activate_cell")
-                    activate.set("target", cell_id)
-                    activate.text = AtomicString("activate cell")
+                    # "activation" link => move it to JS
+                    #activate = etree.SubElement(parent, "a")
+                    #activate.set("class", "activate_cell")
+                    #activate.set("target", cell_id)
+                    #activate.text = AtomicString("activate cell")
 
                 parent.remove(sibling)
 

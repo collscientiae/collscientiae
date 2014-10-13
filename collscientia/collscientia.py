@@ -39,10 +39,10 @@ class CollScientia(object):
         from os.path import abspath, normpath, isdir
 
         self._log = create_logger()
-
         self._src = abspath(normpath(src))
         self._theme = abspath(normpath(theme))
         self._targ = abspath(normpath(targ))
+        self.config = self.read_config()
 
         if not isdir(self.src):
             raise ValueError("src must be a directory")
@@ -64,7 +64,6 @@ class CollScientia(object):
         self._db = CollScientiaDB(self)
         self.processor = ContentProcessor(self)
         self.renderer = OutputRenderer(self)
-        self.config = self.read_config()
         self.j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
 
     @property
@@ -111,7 +110,6 @@ class CollScientia(object):
         from os.path import join, isdir, splitext, relpath, sep
         from os import walk, listdir
 
-        print self.config["modules"]
         for doc_dir in [join(self.src, _) for _ in self.config["modules"]]:
 
             mod_config = get_yaml(join(doc_dir, "config.yaml"))
@@ -140,15 +138,13 @@ class CollScientia(object):
         self.log.info("building db from '%s'" % self.src)
 
         for module, filepath, docid, md_raw in self.get_documents():
+            self.log.debug("processing: {}: {}".format(module, docid))
             try:
                 ns = module.namespace
                 doc = Document(docid=docid,
                                md_raw=md_raw,
                                ns=ns)
                 html, meta = self.processor.convert(doc)
-
-                # convert to actual documents
-                meta["seealso"] = [module[_] for _ in meta["seealso"]]
                 doc.update(output=html, **meta)
                 self.db.register(doc)
 

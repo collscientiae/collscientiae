@@ -11,6 +11,7 @@ class OutputRenderer(object):
 
     def __init__(self, collscientia):
         self.log = collscientia.log
+        self.config = collscientia.config
         self.db = collscientia.db
         self.src = collscientia.src
         self.theme = collscientia.theme
@@ -54,8 +55,8 @@ class OutputRenderer(object):
 
     def output_index(self):
         index_fn = join(self.targ, "index.html")
-        modules = sorted(self.db.modules.values(),
-                         key=lambda _: _.name)
+
+        modules = [self.db.modules[_] for _ in self.config["modules"]]
         self.render_template("index_modules.html",
                              index_fn,
                              modules=modules)
@@ -81,10 +82,12 @@ class OutputRenderer(object):
                 out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
                 backlinks = self.db.backlinks[(module.namespace, key)]
                 self.log.debug("  + %s" % out_fn)
+                seealso = [module[_] for _ in doc.seealso]
                 self.render_template("document.html",
                                      out_fn,
                                      title=doc.title,
                                      doc=doc,
+                                     seealso=seealso,
                                      backlinks=backlinks,
                                      level=1)
 
