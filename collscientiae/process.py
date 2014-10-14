@@ -262,12 +262,12 @@ class ContentProcessor(object):
                               '<escape')
 
         # Tells markdown to process "wikistyle" knowls with optional title
-        linkandknowl_regex = r'(link|knowl)\[\[([^\]]+)\]\]'
+        linkandknowl_regex = r'(link|knowl)\[([^\]]+)\]'
         md.inlinePatterns.add('linkknowltag',
                               KnowlAndLinkPattern(linkandknowl_regex, self),
                               '<escape')
 
-        include_pattern = r'include\[\[([^\]]+)\]\]'
+        include_pattern = r'include\[([^\]]+)\]'
         md.inlinePatterns.add('includes',
                               IncludePattern(include_pattern, self),
                               '<escape')
