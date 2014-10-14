@@ -124,11 +124,11 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
     def __init__(self, parser, cp):
         self.cp = cp
         self.log = cp.log
+        self.cell_id_counter = 0
         markdown.blockprocessors.CodeBlockProcessor.__init__(self, parser)
 
     def run(self, parent, blocks):
         from markdown.util import etree, AtomicString
-        from uuid import uuid4
 
         sibling = self.lastChild(parent)
         block = blocks.pop(0)
@@ -143,7 +143,8 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             code.text = AtomicString('%s\n%s\n' % (code.text, block.rstrip()))
         else:
             # This is a new codeblock. Create the elements and insert text.
-            cell_id = str(uuid4())
+            cell_id = str(self.cell_id_counter)
+            self.cell_id_counter += 1
 
             outer = etree.SubElement(parent, "code")
             inner = etree.SubElement(outer, 'pre')
@@ -216,11 +217,13 @@ class ContentProcessor(object):
     allowed_keys = ["authors", "copyright", "title", "type",
                     "subtitle", "abstract", "date", "seealso"]
 
+    required_keys = ["title"]
+
     def __init__(self, cs):
         self.cs = cs
         db = cs.db
         log = cs.log
-        self.doc_root_hash = hashlib.sha256()
+        self.doc_root_hash = hashlib.sha1()
         # TODO update with documentation version and so on
         # self.doc_root_hash.update()
         assert isinstance(db, CollScientiaeDB)
@@ -282,6 +285,10 @@ class ContentProcessor(object):
             assert key in ContentProcessor.allowed_keys, \
                 "{} not allowed".format(key)
 
+        # required keys
+        for key in ContentProcessor.required_keys:
+            assert key in meta, "Meta Key {} not set for {}".format(key, self.document.docid)
+
         if "type" in meta:
             mt = meta["type"]
             assert len(mt) == 1
@@ -331,7 +338,8 @@ class ContentProcessor(object):
         meta = self.get_metadata()
 
         self.doc_root_hash.update(html.encode("utf8"))
-        metafixed = [(k, tuple(v) if isinstance(v, list) else v) for k, v in meta.iteritems()]
-        self.doc_root_hash.update(str(hash(frozenset(metafixed))))
+        metafixed = [(k, tuple(v) if isinstance(v, list) else v)
+                     for k, v in meta.iteritems()]
+        self.doc_root_hash.update(str(frozenset(metafixed)))
 
         return html, meta

@@ -117,9 +117,9 @@ class CollScientiae(object):
             self.j2env.globals.update(mod_config)
             self.db.register_module(module)
 
-            for path, _, filenames in walk(doc_dir):
+            for path, _, filenames in sorted(walk(doc_dir)):
                 # self.log.debug("DOCID: %s" % docid)
-                for fn in filenames:
+                for fn in sorted(filenames):
                     if fn == "config.yaml":
                         continue
                     filepath = join(path, fn)

@@ -71,7 +71,7 @@ class DocumentationModule(object):
         return item in self._documents
 
     def __str__(self):
-        return "Module {}@{}".format(self.name, self.path)
+        return "Module {}".format(self.name)
 
 
 class Section(YAMLObjectCallingInit):
