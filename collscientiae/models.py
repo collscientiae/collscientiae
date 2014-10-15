@@ -95,6 +95,16 @@ class Document(object):
         self._ns = ns
         self.md_raw = md_raw
         self.backlinks = None  # need to be set after *all* documents are processed
+        # these are defined in self.update(...)
+        self.type = None
+        self.title = None
+        self.subtitle = None
+        self.abstract = None
+        self.seealso = None
+        # output contains html (or latex) after processing the content
+        self.output = None
+        self.authors = None
+        self.tags = None
 
     def update(self, output, title=None, authors=None,
                subtitle=None, abstract=None,
@@ -126,6 +136,21 @@ class Document(object):
         assert self._ns is None, "Namespace can only be set once"
         assert namespace_pattern.match(ns)
         self._ns = ns
+
+    def breadcrum(self):
+        """
+        :return: list of [("name", "link.to.it"), ...]
+        """
+        ret = []
+        ids = self.docid.split(".")
+        for level, name in enumerate(ids):
+            partid = '.'.join(ids[:level + 1])
+            if level < len(ids) - 1:
+                n = name.title()
+            else:
+                n = self.title
+            ret.append((n, partid))
+        return ret
 
     def __repr__(self):
         return "Document[{0.namespace}/{0.docid}]".format(self)
