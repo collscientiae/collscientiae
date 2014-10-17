@@ -43,17 +43,59 @@ class OutputRenderer(object):
     def output(self):
         self.log.info("rendering into %s" % self.cs.targ)
         self.copy_static_files()
-        self.output_index()
+        self.output_main_index()
         self.output_documents()
+        self.output_document_indices()
         self.output_hashtags()
 
-    def output_index(self):
+    def output_main_index(self):
         index_fn = join(self.cs.targ, "index.html")
 
         modules = [self.cs.db.modules[_] for _ in self.cs.config["modules"]]
         self.render_template("index_modules.html",
                              index_fn,
                              modules=modules)
+
+    def render_document_index(self, ns, doc_id, children, doc_idx_fn=None):
+        # TODO clean this mess up, it's used 2x!
+        if doc_idx_fn is None:
+            doc_idx_fn = join(self.cs.targ, ns, doc_id + ".html")
+        links = []
+        for key, node in children.iteritems():
+            name = ("+" + key.title()) if len(node) > 0 else key.title()
+            if doc_id is None:
+                href = '.'.join((key, "html"))
+            else:
+                href = '.'.join((doc_id, key, "html"))
+            links.append((name, href))
+        bc = Document.mk_breadcrum(doc_id) if doc_id else []
+        self.render_template("index.html",
+                             doc_idx_fn,
+                             namespace=ns,
+                             level=1,
+                             title=doc_id,
+                             breadcrum=bc,
+                             links=links)
+
+    def output_document_indices(self):
+
+        def walk(m, node, parents, depth=0):
+            assert isinstance(m, DocumentationModule)
+            # print "  " * depth, "+", key, "INDEX" if len(node) > 0 else "LEAF"
+            if len(node) > 0:
+                doc_id = ".".join(parents)
+                if doc_id not in m:
+                    self.render_document_index(m.namespace, doc_id, node)
+
+            for key, node in node.iteritems():
+                p = parents[:]
+                p.append(key)
+                walk(m, node, p, depth=depth + 1)
+
+        for m in self.cs.db.modules.values():
+            assert isinstance(m, DocumentationModule)
+            for key, section in m.tree.iteritems():
+                walk(m, section, [key])
 
     def output_documents(self):
         self.log.info("processing document templates")
@@ -63,18 +105,11 @@ class OutputRenderer(object):
             makedirs(doc_dir)
 
             doc_index = join(doc_dir, "index.html")
-            links = [(_, _ + ".html") for _ in module.keys()]
-
-            self.render_template("index.html",
-                                 doc_index,
-                                 namespace=ns,
-                                 title=module.name,
-                                 level=1,
-                                 links=links)
+            self.render_document_index(module.namespace, None, module.tree, doc_index)
 
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
-                out_fn = join(doc_dir, '{}.{}'.format(doc.docid, "html"))
+                out_fn = join(doc_dir, doc.docid + ".html")
                 backlinks = self.cs.db.backlinks[(module.namespace, key)]
                 self.log.debug("  + %s" % out_fn)
                 seealso = [module[_] for _ in doc.seealso]
@@ -108,7 +143,7 @@ class OutputRenderer(object):
         for hashtag, docs in hashtags:
             out_fn = join(hashtag_dir, hashtag + ".html")
             self.log.debug("  # " + out_fn)
-            bc2 =  bc + [(hashtag, hashtag)]
+            bc2 = bc + [(hashtag, hashtag)]
             links = [('{0.docid}'.format(d),
                       '../{0.namespace}/{0.docid}.html'.format(d)) for d in docs]
             self.render_template("index.html",

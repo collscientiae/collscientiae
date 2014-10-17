@@ -58,8 +58,8 @@ class DocumentationModule(object):
         # maps to documents via their unique ID
         self._documents = {}
         # tree of document IDs (key mapping to empty dict indicates a leaf)
-        recursive_dict = lambda : defaultdict(recursive_dict)
-        self._tree = defaultdict(recursive_dict)
+        recursive_dict = lambda: defaultdict(recursive_dict)
+        self.tree = defaultdict(recursive_dict)
 
     def __getitem__(self, key):
         return self._documents[key]
@@ -73,7 +73,7 @@ class DocumentationModule(object):
         if docid in self:
             raise DuplicateDocumentError("'%s'" % docid)
         self[docid] = document
-        node = self._tree
+        node = self.tree
         for level in docid.split("."):
             node = node[level]
 
@@ -153,20 +153,25 @@ class Document(object):
         assert namespace_pattern.match(ns)
         self._ns = ns
 
-    def breadcrum(self):
-        """
-        :return: list of [("name", "link.to.it"), ...]
-        """
+    @staticmethod
+    def mk_breadcrum(docid, title=None):
         ret = []
-        ids = self.docid.split(".")
+        ids = docid.split(".")
+        title = title or ids[-1].title()
         for level, name in enumerate(ids):
             part_id = '.'.join(ids[:level + 1])
             if level < len(ids) - 1:
                 n = name.title()
             else:
-                n = self.title
+                n = title
             ret.append((n, part_id))
         return ret
+
+    def breadcrum(self):
+        """
+        :return: list of [("name", "link.to.it"), ...]
+        """
+        return self.mk_breadcrum(self.docid, self.title)
 
     def __repr__(self):
         return "Document[{0.namespace}/{0.docid}]".format(self)

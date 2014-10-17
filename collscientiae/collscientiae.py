@@ -171,23 +171,6 @@ class CollScientiae(object):
         self.renderer.output()
 
 
-        def walk(m, key, node, parents, depth = 0):
-            assert isinstance(m, DocumentationModule)
-            # print "  " * depth, "+", key, "INDEX" if len(node) > 0 else "LEAF"
-            if len(node) > 0:
-                print "INDEX:", ".".join(parents)
-                print "       +-> ", ' '.join(node.keys())
-
-            for key, node in node.iteritems():
-                p = parents[:]
-                p.append(key)
-                walk(m, key, node, p, depth=depth + 1)
-
-
-        for name, m in self.db.modules.iteritems():
-            walk(m, name, m._tree, [name])
-
-
 if __name__ == "__main__":
     import sys
 
