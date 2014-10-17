@@ -62,12 +62,12 @@ class OutputRenderer(object):
             doc_idx_fn = join(self.cs.targ, ns, doc_id + ".html")
         links = []
         for key, node in children.iteritems():
-            name = ("+" + key.title()) if len(node) > 0 else key.title()
+            type = "dir" if len(node) > 0 else "file"
             if doc_id is None:
                 href = '.'.join((key, "html"))
             else:
                 href = '.'.join((doc_id, key, "html"))
-            links.append((name, href))
+            links.append((key.title(), href, type))
         bc = Document.mk_breadcrum(doc_id) if doc_id else []
         self.render_template("index.html",
                              doc_idx_fn,
@@ -131,7 +131,7 @@ class OutputRenderer(object):
                           key=lambda _: _[0])
 
         hashtag_index = join(hashtag_dir, "index.html")
-        links = [("#" + _[0], _[0] + ".html") for _ in hashtags]
+        links = [("#" + _[0], _[0] + ".html", "hashtag") for _ in hashtags]
         bc = [("#", "index")]
         self.render_template("index.html",
                              hashtag_index,
@@ -145,7 +145,8 @@ class OutputRenderer(object):
             self.log.debug("  # " + out_fn)
             bc2 = bc + [(hashtag, hashtag)]
             links = [('{0.docid}'.format(d),
-                      '../{0.namespace}/{0.docid}.html'.format(d)) for d in docs]
+                      '../{0.namespace}/{0.docid}.html'.format(d),
+                      'file') for d in docs]
             self.render_template("index.html",
                                  out_fn,
                                  title="Hashtag #" + hashtag,
