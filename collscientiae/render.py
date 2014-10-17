@@ -67,6 +67,7 @@ class OutputRenderer(object):
 
             self.render_template("index.html",
                                  doc_index,
+                                 namespace=ns,
                                  title=module.name,
                                  level=1,
                                  links=links)
@@ -79,6 +80,8 @@ class OutputRenderer(object):
                 seealso = [module[_] for _ in doc.seealso]
                 self.render_template("document.html",
                                      out_fn,
+                                     namespace=ns,
+                                     breadcrum=doc.breadcrum(),
                                      title=doc.title,
                                      doc=doc,
                                      seealso=seealso,
@@ -94,21 +97,23 @@ class OutputRenderer(object):
 
         hashtag_index = join(hashtag_dir, "index.html")
         links = [("#" + _[0], _[0] + ".html") for _ in hashtags]
+        bc = [("#", "index")]
         self.render_template("index.html",
                              hashtag_index,
                              title="Hashtag Index",
+                             breadcrum=bc,
                              level=1,
                              links=links)
 
         for hashtag, docs in hashtags:
             out_fn = join(hashtag_dir, hashtag + ".html")
-
             self.log.debug("  # " + out_fn)
-
+            bc2 =  bc + [(hashtag, hashtag)]
             links = [('{0.docid}'.format(d),
                       '../{0.namespace}/{0.docid}.html'.format(d)) for d in docs]
             self.render_template("index.html",
                                  out_fn,
                                  title="Hashtag #" + hashtag,
+                                 breadcrum=bc2,
                                  level=1,
                                  links=links)

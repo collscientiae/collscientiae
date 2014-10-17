@@ -1,7 +1,10 @@
 # -*- coding: utf8 -*-
+from collections import defaultdict
 import yaml
 import inspect
 import re
+from .db import DuplicateDocumentError
+
 namespace_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]+$")
 id_pattern = re.compile(r"^[a-zA-Z0-9_.]+$")
 
@@ -54,12 +57,25 @@ class DocumentationModule(object):
         self.namespace = path.split(sep)[-1]
         # maps to documents via their unique ID
         self._documents = {}
+        # tree of document IDs (key mapping to empty dict indicates a leaf)
+        recursive_dict = lambda : defaultdict(recursive_dict)
+        self._tree = defaultdict(recursive_dict)
 
     def __getitem__(self, key):
         return self._documents[key]
 
     def __setitem__(self, key, item):
         self._documents[key] = item
+
+    def add_document(self, document):
+        assert isinstance(document, Document), "Given object is not a 'Document'"
+        docid = document.docid
+        if docid in self:
+            raise DuplicateDocumentError("'%s'" % docid)
+        self[docid] = document
+        node = self._tree
+        for level in docid.split("."):
+            node = node[level]
 
     def iteritems(self):
         return self._documents.iteritems()
@@ -144,12 +160,12 @@ class Document(object):
         ret = []
         ids = self.docid.split(".")
         for level, name in enumerate(ids):
-            partid = '.'.join(ids[:level + 1])
+            part_id = '.'.join(ids[:level + 1])
             if level < len(ids) - 1:
                 n = name.title()
             else:
                 n = self.title
-            ret.append((n, partid))
+            ret.append((n, part_id))
         return ret
 
     def __repr__(self):

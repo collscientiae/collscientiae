@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import, unicode_literals
 from collections import defaultdict
-from .models import Document, DocumentationModule
 
 
 class DuplicateDocumentError(Exception):
@@ -27,17 +26,16 @@ class CollScientiaeDB(object):
         self.modules = {}
 
     def register(self, document):
+        from .models import Document
         assert isinstance(document, Document), "Given object is not a 'Document'"
-        docid = document.docid
         ns = document.namespace
         assert ns in self.modules,\
             "Document's namespace '{}' not registered yet!".format(ns)
-        if docid in self.modules[ns]:
-            raise DuplicateDocumentError("'%s'" % docid)
-        self.modules[ns][docid] = document
+        self.modules[ns].add_document(document)
         # self.log.debug(" + %s::%s" % (ns, docid))
 
     def check_consistency(self):
+        from .models import Document
         self.log.info("checking consistency")
         for ns, module in self.modules.iteritems():
             for key, doc in module.iteritems():
@@ -55,6 +53,7 @@ class CollScientiaeDB(object):
                     "unkown ID '{}' in a knowl or link to {}".format(docid, docs)
 
     def register_module(self, module):
+        from .models import DocumentationModule
         assert isinstance(module, DocumentationModule)
         assert module.namespace not in self.modules
         self.modules[module.namespace] = module
