@@ -157,13 +157,15 @@ class Document(object):
     def mk_breadcrum(docid, title=None):
         ret = []
         ids = docid.split(".")
-        title = title or ids[-1].title()
         for level, name in enumerate(ids):
-            part_id = '.'.join(ids[:level + 1])
+            if level == 0:
+                part_id = "index"
+            else:
+                part_id = '.'.join(ids[:level + 1])
             if level < len(ids) - 1:
                 n = name.title()
             else:
-                n = title
+                n = title or ids[-1].title()
             ret.append((n, part_id))
         return ret
 

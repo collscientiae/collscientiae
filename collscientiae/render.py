@@ -20,9 +20,7 @@ class OutputRenderer(object):
             output.write(html.encode("utf-8"))
             output.write(b"\n")
 
-
-    def render_index(self, index, directory, fn = None, breadcrum=None, level=1):
-        fn = fn or "index"
+    def render_index(self, index, directory, fn, breadcrum=None, level=1):
         assert isinstance(index, Index)
         if not exists(directory):
             makedirs(directory)
@@ -70,48 +68,65 @@ class OutputRenderer(object):
                              index_fn,
                              modules=modules)
 
-    def render_document_index(self, ns, doc_id, children, doc_dir=None):
+    def render_document_index(self, module, doc_id, children):
         # TODO clean this mess up, it's used 2x!
-        if doc_dir is None:
-            doc_dir = join(self.cs.targ, ns)
-        idx = Index(doc_id)
+        assert isinstance(module, DocumentationModule)
+        ns = module.namespace
+        doc_dir = join(self.cs.targ, ns)
+        idx = Index(doc_id or module.namespace)
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
             if doc_id is None:
                 href = key
             else:
                 href = doc_id + "." + key
-            idx += Index.Entry(key.title(), href, type)
-        bc = Document.mk_breadcrum(doc_id) if doc_id else []
-        self.render_index(idx, doc_dir, fn=doc_id, breadcrum=bc)
+            if type == "file":
+                doc = module[href]
+                descr = doc.subtitle
+                title = doc.title
+            else:
+                descr = None
+                title = key.title()
+            idx += Index.Entry(title, href, type=type, description=descr)
+
+        bc = [(ns.title(), "index")]
+        if doc_id is None:
+            fn = "index"
+        else:
+            fn = doc_id
+            bc += Document.mk_breadcrum(doc_id)
+
+        self.render_index(idx, doc_dir, fn=fn, breadcrum=bc)
 
     def output_document_indices(self):
         self.log.info("writing document index files")
+
         def walk(m, node, parents, depth=0):
             assert isinstance(m, DocumentationModule)
             # print "  " * depth, "+", key, "INDEX" if len(node) > 0 else "LEAF"
-            if len(node) > 0:
+            if len(parents) > 0:
                 doc_id = ".".join(parents)
                 if doc_id not in m:
-                    self.render_document_index(m.namespace, doc_id, node)
+                    self.render_document_index(m, doc_id, node)
 
             for key, node in node.iteritems():
                 p = parents[:]
                 p.append(key)
                 walk(m, node, p, depth=depth + 1)
 
-        for m in self.cs.db.modules.values():
-            assert isinstance(m, DocumentationModule)
-            for key, section in m.tree.iteritems():
-                walk(m, section, [key])
+        for ns, module in self.cs.db.modules.iteritems():
+            assert isinstance(module, DocumentationModule)
+            self.render_document_index(module, None, module.tree)
+            walk(module, module.tree, [])
+            # for key, section in m.tree.iteritems():
+            #    walk(m, section, [key])
 
     def output_documents(self):
         self.log.info("writing document templates")
         for ns, module in self.cs.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
             doc_dir = join(self.cs.targ, ns)
-            # makedirs(doc_dir)
-            self.render_document_index(module.namespace, None, module.tree, doc_dir)
+            makedirs(doc_dir)
 
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
@@ -129,7 +144,6 @@ class OutputRenderer(object):
                                      backlinks=backlinks,
                                      level=1)
 
-
     def output_hashtags(self):
         self.log.info("  ... and hashtags")
         hashtag_dir = join(self.cs.targ, "hashtag")
@@ -140,9 +154,8 @@ class OutputRenderer(object):
         for ht in hashtags:
             idx += Index.Entry(ht[0], ht[0], type="hashtag")
 
-
         bc = [("#", "index")]
-        self.render_index(idx, hashtag_dir, breadcrum= bc)
+        self.render_index(idx, hashtag_dir, fn="index", breadcrum=bc)
 
         for hashtag, docs in hashtags:
             #out_fn = join(hashtag_dir, hashtag + ".html")
@@ -153,4 +166,3 @@ class OutputRenderer(object):
                 idx += Index.Entry('{0.docid}'.format(d),
                                    '../{0.namespace}/{0.docid}'.format(d))
             self.render_index(idx, hashtag_dir, fn=hashtag, breadcrum=bc2)
-
