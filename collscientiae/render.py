@@ -1,8 +1,8 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
-from os.path import abspath, normpath, isdir, join, relpath, splitext
+from os.path import abspath, normpath, isdir, join, relpath, splitext, exists
 from os import makedirs, walk, link
-from collscientiae.models import DocumentationModule
+from collscientiae.models import DocumentationModule, Index
 from .models import Document
 import codecs
 
@@ -19,6 +19,20 @@ class OutputRenderer(object):
         with open(target_fn, "wb") as output:
             output.write(html.encode("utf-8"))
             output.write(b"\n")
+
+
+    def render_index(self, index, directory, fn = None, breadcrum=None, level=1):
+        fn = fn or "index"
+        assert isinstance(index, Index)
+        if not exists(directory):
+            makedirs(directory)
+        index_fn = join(directory, fn + ".html")
+        self.render_template("index.html",
+                             index_fn,
+                             title=index.title,
+                             breadcrum=breadcrum,
+                             level=level,
+                             index=index)
 
     def copy_static_files(self):
         """
@@ -56,29 +70,23 @@ class OutputRenderer(object):
                              index_fn,
                              modules=modules)
 
-    def render_document_index(self, ns, doc_id, children, doc_idx_fn=None):
+    def render_document_index(self, ns, doc_id, children, doc_dir=None):
         # TODO clean this mess up, it's used 2x!
-        if doc_idx_fn is None:
-            doc_idx_fn = join(self.cs.targ, ns, doc_id + ".html")
-        links = []
+        if doc_dir is None:
+            doc_dir = join(self.cs.targ, ns)
+        idx = Index(doc_id)
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
             if doc_id is None:
-                href = '.'.join((key, "html"))
+                href = key
             else:
-                href = '.'.join((doc_id, key, "html"))
-            links.append((key.title(), href, type))
+                href = doc_id + "." + key
+            idx += Index.Entry(key.title(), href, type)
         bc = Document.mk_breadcrum(doc_id) if doc_id else []
-        self.render_template("index.html",
-                             doc_idx_fn,
-                             namespace=ns,
-                             level=1,
-                             title=doc_id,
-                             breadcrum=bc,
-                             links=links)
+        self.render_index(idx, doc_dir, fn=doc_id, breadcrum=bc)
 
     def output_document_indices(self):
-
+        self.log.info("writing document index files")
         def walk(m, node, parents, depth=0):
             assert isinstance(m, DocumentationModule)
             # print "  " * depth, "+", key, "INDEX" if len(node) > 0 else "LEAF"
@@ -98,14 +106,12 @@ class OutputRenderer(object):
                 walk(m, section, [key])
 
     def output_documents(self):
-        self.log.info("processing document templates")
+        self.log.info("writing document templates")
         for ns, module in self.cs.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
             doc_dir = join(self.cs.targ, ns)
-            makedirs(doc_dir)
-
-            doc_index = join(doc_dir, "index.html")
-            self.render_document_index(module.namespace, None, module.tree, doc_index)
+            # makedirs(doc_dir)
+            self.render_document_index(module.namespace, None, module.tree, doc_dir)
 
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
@@ -123,33 +129,28 @@ class OutputRenderer(object):
                                      backlinks=backlinks,
                                      level=1)
 
+
     def output_hashtags(self):
         self.log.info("  ... and hashtags")
         hashtag_dir = join(self.cs.targ, "hashtag")
-        makedirs(hashtag_dir)
         hashtags = sorted(self.cs.db.hashtags.iteritems(),
                           key=lambda _: _[0])
 
-        hashtag_index = join(hashtag_dir, "index.html")
-        links = [("#" + _[0], _[0] + ".html", "hashtag") for _ in hashtags]
+        idx = Index("Hashtag Index")
+        for ht in hashtags:
+            idx += Index.Entry(ht[0], ht[0], type="hashtag")
+
+
         bc = [("#", "index")]
-        self.render_template("index.html",
-                             hashtag_index,
-                             title="Hashtag Index",
-                             breadcrum=bc,
-                             level=1,
-                             links=links)
+        self.render_index(idx, hashtag_dir, breadcrum= bc)
 
         for hashtag, docs in hashtags:
-            out_fn = join(hashtag_dir, hashtag + ".html")
-            self.log.debug("  # " + out_fn)
+            #out_fn = join(hashtag_dir, hashtag + ".html")
+            self.log.debug("  # " + hashtag)
             bc2 = bc + [(hashtag, hashtag)]
-            links = [('{0.docid}'.format(d),
-                      '../{0.namespace}/{0.docid}.html'.format(d),
-                      'file') for d in docs]
-            self.render_template("index.html",
-                                 out_fn,
-                                 title="Hashtag #" + hashtag,
-                                 breadcrum=bc2,
-                                 level=1,
-                                 links=links)
+            idx = Index("Hashtag #" + hashtag)
+            for d in docs:
+                idx += Index.Entry('{0.docid}'.format(d),
+                                   '../{0.namespace}/{0.docid}'.format(d))
+            self.render_index(idx, hashtag_dir, fn=hashtag, breadcrum=bc2)
+

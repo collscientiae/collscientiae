@@ -182,3 +182,39 @@ class Plot(Document):
     def __init__(self, plot, **kwargs):
         self.plot = plot
         Document.__init__(self, **kwargs)
+
+
+class Index(object):
+
+    """
+    Simple container class, contains the data for all those indexing pages.
+    Its only use is to send the info to the template.
+    """
+    class Entry(object):
+
+        """
+        One single index entry
+        """
+
+        __slots__ = ["title", "href", "description", "type"]
+
+        types = ("dir", "file", "hashtag")
+
+        def __init__(self, title, href, description=None, type="file"):
+            assert type in Index.Entry.types
+            self.title = title
+            self.href = href + ".html"
+            self.description = description
+            self.type = type
+
+    def __init__(self, title):
+        self.title = title
+        self.entries = []
+
+    def __iadd__(self, entry):
+        assert isinstance(entry, Index.Entry)
+        self.entries.append(entry)
+        return self
+
+    def __iter__(self):
+        return iter(self.entries)
