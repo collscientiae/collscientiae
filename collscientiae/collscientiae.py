@@ -55,9 +55,10 @@ class CollScientiae(object):
         self.tmpl_dir = join(self.theme, "src")
         j2loader = j2.FileSystemLoader(self.tmpl_dir)
         self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
-        config_theme = yaml.load(open(join(self.theme, "config.yaml")))
+        config_theme = get_yaml(join(self.theme, "config.yaml"))
         if config_theme is not None:
             self.j2env.globals.update(config_theme)
+        self.j2env.globals["footer"] = self.config["footer"]
         self.j2env.filters["prefix"] = filter_prefix
 
         # initializing all the main components
