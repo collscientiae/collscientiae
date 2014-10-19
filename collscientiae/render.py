@@ -70,11 +70,10 @@ class OutputRenderer(object):
                              modules=modules)
 
     def render_document_index(self, module, doc_id, children):
-        # TODO clean this mess up, it's used 2x!
         assert isinstance(module, DocumentationModule)
         ns = module.namespace
         doc_dir = join(self.cs.targ, ns)
-        idx = Index(module.namespace)
+        idx = Index(module.namespace.title())
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
             if doc_id is None:
@@ -96,7 +95,7 @@ class OutputRenderer(object):
         else:
             fn = doc_id
             bc = Document.mk_breadcrum(doc_id)
-            idx.title = " - ".join(_[0].title() for _ in reversed(bc))
+            idx.title = " - ".join(_[0].title() for _ in reversed(bc)) + " - " + idx.title
 
         self.render_index(idx, doc_dir, fn=fn, namespace=ns, breadcrum=bc)
 
@@ -120,8 +119,6 @@ class OutputRenderer(object):
             assert isinstance(module, DocumentationModule)
             self.render_document_index(module, None, module.tree)
             walk(module, module.tree, [])
-            # for key, section in m.tree.iteritems():
-            #    walk(m, section, [key])
 
     def output_documents(self):
         self.log.info("writing document templates")
@@ -138,7 +135,7 @@ class OutputRenderer(object):
                 seealso = [module[_] for _ in doc.seealso]
                 bc = doc.breadcrum()
                 title = " - ".join(_[0].title() for _ in reversed(bc))
-                title = title + " - " + ns.title()
+                title += " - " + ns.title()
                 self.render_template("document.html",
                                      out_fn,
                                      namespace=ns,
