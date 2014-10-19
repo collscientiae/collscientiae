@@ -20,7 +20,7 @@ class OutputRenderer(object):
             output.write(html.encode("utf-8"))
             output.write(b"\n")
 
-    def render_index(self, index, directory, fn, breadcrum=None, level=1):
+    def render_index(self, index, directory, fn, namespace=None, breadcrum=None, level=1):
         assert isinstance(index, Index)
         if not exists(directory):
             makedirs(directory)
@@ -28,6 +28,7 @@ class OutputRenderer(object):
         self.render_template("index.html",
                              index_fn,
                              title=index.title,
+                             namespace=namespace,
                              breadcrum=breadcrum,
                              level=level,
                              index=index)
@@ -73,7 +74,7 @@ class OutputRenderer(object):
         assert isinstance(module, DocumentationModule)
         ns = module.namespace
         doc_dir = join(self.cs.targ, ns)
-        idx = Index(doc_id or module.namespace)
+        idx = Index(module.namespace)
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
             if doc_id is None:
@@ -89,14 +90,15 @@ class OutputRenderer(object):
                 title = key.title()
             idx += Index.Entry(title, href, type=type, description=descr)
 
-        bc = [(ns.title(), "index")]
+        bc = []
         if doc_id is None:
             fn = "index"
         else:
             fn = doc_id
-            bc += Document.mk_breadcrum(doc_id)
+            bc = Document.mk_breadcrum(doc_id)
+            idx.title = " - ".join(_[0].title() for _ in reversed(bc))
 
-        self.render_index(idx, doc_dir, fn=fn, breadcrum=bc)
+        self.render_index(idx, doc_dir, fn=fn, namespace=ns, breadcrum=bc)
 
     def output_document_indices(self):
         self.log.info("writing document index files")
@@ -134,11 +136,14 @@ class OutputRenderer(object):
                 backlinks = self.cs.db.backlinks[(module.namespace, key)]
                 self.log.debug("  + %s" % out_fn)
                 seealso = [module[_] for _ in doc.seealso]
+                bc = doc.breadcrum()
+                title = " - ".join(_[0].title() for _ in reversed(bc))
+                title = title + " - " + ns.title()
                 self.render_template("document.html",
                                      out_fn,
                                      namespace=ns,
-                                     breadcrum=doc.breadcrum(),
-                                     title=doc.title,
+                                     breadcrum=bc,
+                                     title=title,
                                      doc=doc,
                                      seealso=seealso,
                                      backlinks=backlinks,

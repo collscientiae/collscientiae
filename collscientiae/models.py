@@ -158,10 +158,7 @@ class Document(object):
         ret = []
         ids = docid.split(".")
         for level, name in enumerate(ids):
-            if level == 0:
-                part_id = "index"
-            else:
-                part_id = '.'.join(ids[:level + 1])
+            part_id = '.'.join(ids[:level + 1])
             if level < len(ids) - 1:
                 n = name.title()
             else:
