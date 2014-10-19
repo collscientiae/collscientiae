@@ -60,6 +60,7 @@ class CollScientiae(object):
             self.j2env.globals.update(config_theme)
         self.j2env.globals["footer"] = self.config["footer"]
         self.j2env.filters["prefix"] = filter_prefix
+        self.j2env.globals["creation_date"] = self.get_creation_date()
 
         # initializing all the main components
         self._db = CollScientiaeDB(self)
@@ -86,6 +87,16 @@ class CollScientiae(object):
     @property
     def db(self):
         return self._db
+
+    @staticmethod
+    def get_creation_date():
+        """
+        This must be UTC and ISO format, e.g. 2014-10-19T19:19:04
+        """
+        from datetime import datetime as dt
+        now = dt.utcnow()
+        now = now.replace(microsecond=0)
+        return dt.isoformat(now)
 
     def remap_module(self, origin, target):
         """
