@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
+from collscientiae.utils import mytitle
 from .models import DocumentationModule
 from .utils import get_yaml, get_markdown, create_logger
 from .db import CollScientiaeDB, DuplicateDocumentError
@@ -59,8 +60,9 @@ class CollScientiae(object):
         if config_theme is not None:
             self.j2env.globals.update(config_theme)
         self.j2env.globals["footer"] = self.config["footer"]
-        self.j2env.filters["prefix"] = filter_prefix
         self.j2env.globals["creation_date"] = self.get_creation_date()
+        self.j2env.filters["prefix"] = filter_prefix
+        self.j2env.filters["title"] = mytitle
 
         # initializing all the main components
         self._db = CollScientiaeDB(self)

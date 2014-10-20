@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from os.path import abspath, normpath, isdir, join, relpath, splitext, exists
 from os import makedirs, walk, link
 from collscientiae.models import DocumentationModule, Index
+from collscientiae.utils import mytitle
 from .models import Document
 import codecs
 
@@ -12,26 +13,6 @@ class OutputRenderer(object):
     def __init__(self, collscientiae):
         self.log = collscientiae.log
         self.cs = collscientiae
-
-    def render_template(self, template_fn, target_fn, **data):
-        tmpl = self.cs.j2env.get_template(template_fn)
-        html = tmpl.render(**data)
-        with open(target_fn, "wb") as output:
-            output.write(html.encode("utf-8"))
-            output.write(b"\n")
-
-    def render_index(self, index, directory, fn, namespace=None, breadcrum=None, level=1):
-        assert isinstance(index, Index)
-        if not exists(directory):
-            makedirs(directory)
-        index_fn = join(directory, fn + ".html")
-        self.render_template("index.html",
-                             index_fn,
-                             title=index.title,
-                             namespace=namespace,
-                             breadcrum=breadcrum,
-                             level=level,
-                             index=index)
 
     def copy_static_files(self):
         """
@@ -53,6 +34,56 @@ class OutputRenderer(object):
                     self.log.debug("link %s -> %s" % (join(relative, fn), targetpath))
                     link(filepath, targetpath)
 
+    def render_template(self, template_fn, target_fn, **data):
+        tmpl = self.cs.j2env.get_template(template_fn)
+        html = tmpl.render(**data)
+        with open(target_fn, "wb") as output:
+            output.write(html.encode("utf-8"))
+            output.write(b"\n")
+
+    def render_index(self, index, directory, fn, namespace=None, breadcrum=None, level=1):
+        assert isinstance(index, Index)
+        if not exists(directory):
+            makedirs(directory)
+        index_fn = join(directory, fn + ".html")
+        self.render_template("index.html",
+                             index_fn,
+                             title=index.title,
+                             namespace=namespace,
+                             breadcrum=breadcrum,
+                             level=level,
+                             index=index)
+
+    def render_document_index(self, module, doc_id, children):
+        assert isinstance(module, DocumentationModule)
+        ns = module.namespace
+        doc_dir = join(self.cs.targ, ns)
+        idx = Index(mytitle(module.namespace))
+        for key, node in children.iteritems():
+            type = "dir" if len(node) > 0 else "file"
+            if doc_id is None:
+                href = key
+            else:
+                href = doc_id + "." + key
+            if type == "file":
+                doc = module[href]
+                descr = doc.subtitle
+                title = doc.title
+            else:
+                descr = None
+                title = mytitle(key)
+            idx += Index.Entry(title, href, type=type, description=descr)
+
+        bc = []
+        if doc_id is None:
+            fn = "index"
+        else:
+            fn = doc_id
+            bc = Document.mk_breadcrum(doc_id)
+            idx.title = " - ".join(mytitle(_[0]) for _ in reversed(bc)) + " - " + idx.title
+
+        self.render_index(idx, doc_dir, fn=fn, namespace=ns, breadcrum=bc)
+
     def output(self):
         self.log.info("rendering into %s" % self.cs.targ)
         self.copy_static_files()
@@ -70,36 +101,6 @@ class OutputRenderer(object):
                              index_fn,
                              title=title,
                              modules=modules)
-
-    def render_document_index(self, module, doc_id, children):
-        assert isinstance(module, DocumentationModule)
-        ns = module.namespace
-        doc_dir = join(self.cs.targ, ns)
-        idx = Index(module.namespace.title())
-        for key, node in children.iteritems():
-            type = "dir" if len(node) > 0 else "file"
-            if doc_id is None:
-                href = key
-            else:
-                href = doc_id + "." + key
-            if type == "file":
-                doc = module[href]
-                descr = doc.subtitle
-                title = doc.title
-            else:
-                descr = None
-                title = key.title()
-            idx += Index.Entry(title, href, type=type, description=descr)
-
-        bc = []
-        if doc_id is None:
-            fn = "index"
-        else:
-            fn = doc_id
-            bc = Document.mk_breadcrum(doc_id)
-            idx.title = " - ".join(_[0].title() for _ in reversed(bc)) + " - " + idx.title
-
-        self.render_index(idx, doc_dir, fn=fn, namespace=ns, breadcrum=bc)
 
     def output_document_indices(self):
         self.log.info("writing document index files")
@@ -136,8 +137,8 @@ class OutputRenderer(object):
                 self.log.debug("  + %s" % out_fn)
                 seealso = [module[_] for _ in doc.seealso]
                 bc = doc.breadcrum()
-                title = " - ".join(_[0].title() for _ in reversed(bc))
-                title += " - " + ns.title()
+                title = " - ".join(mytitle(_[0]) for _ in reversed(bc))
+                title += " - " + mytitle(ns)
                 self.render_template("document.html",
                                      out_fn,
                                      namespace=ns,

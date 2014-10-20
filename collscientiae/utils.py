@@ -3,6 +3,14 @@ import logging
 from time import time
 
 
+def mytitle(s):
+    """
+    my str.title() where camel-case isn't killed!
+    :param s:
+    :return:
+    """
+    return s[0].title() + s[1:]
+
 class CollScientiaLoggingFilter(logging.Filter):
 
     def __init__(self):
