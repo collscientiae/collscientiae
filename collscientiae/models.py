@@ -137,9 +137,8 @@ class Document(object):
         self.output = output
         self.authors = authors
 
-        if tags is not None:
-            if not isinstance(tags, (list, tuple)):
-                tags = [tags]
+        if tags is not None and not isinstance(tags, (list, tuple)):
+            tags = [tags]
         self.tags = tags
 
     @property

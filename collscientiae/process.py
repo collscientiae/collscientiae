@@ -214,7 +214,7 @@ class ContentProcessor(object):
     In the future, it might also be able to transform to LaTeX or PDF.
     """
 
-    allowed_keys = ["authors", "copyright", "title", "type",
+    allowed_keys = ["authors", "copyright", "title", "type", "tags",
                     "subtitle", "abstract", "date", "seealso"]
 
     required_keys = ["title"]
