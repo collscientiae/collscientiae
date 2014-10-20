@@ -64,6 +64,7 @@ class OutputRenderer(object):
     def output_main_index(self):
         index_fn = join(self.cs.targ, "index.html")
         title = self.cs.config["title"]
+        # ordered, like in the config file!
         modules = [self.cs.db.modules[_] for _ in self.cs.config["modules"]]
         self.render_template("index_modules.html",
                              index_fn,

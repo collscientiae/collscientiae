@@ -8,7 +8,7 @@ from .models import Document
 from .db import CollScientiaeDB
 
 document_id_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_.]+$")
-a_href_pattern = re.compile(r"<(a|A)[^\>]+?href=")
+a_href_pattern = re.compile(r"<(a|A)[^>]+?href=")
 
 
 class IgnorePattern(markdown.inlinepatterns.Pattern):

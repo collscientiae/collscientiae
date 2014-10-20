@@ -49,6 +49,9 @@ class DocumentationModule(object):
         # name and description are mandatory entries
         self.name = config.pop("name")
         self.description = config.pop("description")
+        self.landing_page = None
+        if "landing_page" in config:
+            self.landing_page = config.pop("landing_page")
         assert "path" not in config
         assert "namespace" not in config
         self.__dict__.update(**config)
