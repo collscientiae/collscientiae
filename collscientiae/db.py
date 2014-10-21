@@ -38,9 +38,14 @@ class CollScientiaeDB(object):
         from .models import Document
         self.log.info("checking consistency")
         for ns, module in self.modules.iteritems():
+            titles = {}
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
                 assert doc.namespace == ns
+                assert doc.title not in titles, \
+                    "Duplicate title '{0:s}' in {1:s}/{2:s} and {3:s}" \
+                    .format(doc.title, ns, key, titles[doc.title])
+                titles[doc.title] = doc.docid
 
         # for ht, ids in self.hashtags.iteritems():
         # self.log.debug("  #%s -> %s" % (ht, ids))

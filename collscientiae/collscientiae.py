@@ -1,15 +1,14 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
-from collscientiae.utils import mytitle
+
 from .models import DocumentationModule
-from .utils import get_yaml, get_markdown, create_logger
+from .utils import get_yaml, get_markdown, create_logger, mytitle, get_creation_date
 from .db import CollScientiaeDB, DuplicateDocumentError
 from .models import Document
 from .process import ContentProcessor
 from .render import OutputRenderer
 
 import jinja2 as j2
-import yaml
 
 
 @j2.contextfilter
@@ -37,7 +36,7 @@ class CollScientiae(object):
     """
 
     def __init__(self, src, theme, targ):
-        from os.path import abspath, normpath, isdir
+        from os.path import abspath, normpath, isdir, join
 
         self._log = create_logger()
         self._src = abspath(normpath(src))
@@ -52,7 +51,6 @@ class CollScientiae(object):
             raise ValueError("theme must be a directory")
 
         # setting up jinja2
-        from os.path import join
         self.tmpl_dir = join(self.theme, "src")
         j2loader = j2.FileSystemLoader(self.tmpl_dir)
         self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
@@ -60,15 +58,15 @@ class CollScientiae(object):
         if config_theme is not None:
             self.j2env.globals.update(config_theme)
         self.j2env.globals["footer"] = self.config["footer"]
-        self.j2env.globals["creation_date"] = self.get_creation_date()
+        self.j2env.globals["creation_date"] = get_creation_date()
+        self.j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
         self.j2env.filters["prefix"] = filter_prefix
         self.j2env.filters["title"] = mytitle
 
         # initializing all the main components
-        self._db = CollScientiaeDB(self)
+        self.db = CollScientiaeDB(self)
         self.processor = ContentProcessor(self)
         self.renderer = OutputRenderer(self)
-        self.j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
 
     @property
     def log(self):
@@ -86,20 +84,6 @@ class CollScientiae(object):
     def theme(self):
         return self._theme
 
-    @property
-    def db(self):
-        return self._db
-
-    @staticmethod
-    def get_creation_date():
-        """
-        This must be UTC and ISO format, e.g. 2014-10-19T19:19:04
-        """
-        from datetime import datetime as dt
-        now = dt.utcnow()
-        now = now.replace(microsecond=0)
-        return dt.isoformat(now)
-
     def remap_module(self, origin, target):
         """
         Uses the dictionary in the documentation configuration's
@@ -108,11 +92,14 @@ class CollScientiae(object):
 
         :param origin: origin namespace
         :param target: target namespace to rename
-        :return:
+        :type origin: basestring
+        :type target: basestring
+        :return: either the original target or the value of the mapping
+        :rtype : basestring
         """
-        rm = self.config.get("remapping", {})
-        if origin in rm:
-            return rm[origin].get(target, target)
+        remapping = self.config.get("remapping", {})
+        if origin in remapping:
+            return remapping[origin].get(target, target)
         return target
 
     def read_config(self):
@@ -152,7 +139,7 @@ class CollScientiae(object):
         self.log.info("building db from '%s'" % self.src)
 
         for module, filepath, docid, md_raw in self.get_documents():
-            self.log.debug("processing: {}: {}".format(module, docid))
+            self.log.debug("processing: {} / {}".format(module, docid))
             try:
                 ns = module.namespace
                 doc = Document(docid=docid,

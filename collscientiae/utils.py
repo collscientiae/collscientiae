@@ -11,6 +11,16 @@ def mytitle(s):
     """
     return s[0].title() + s[1:]
 
+
+def get_creation_date():
+    """
+    This must be UTC and ISO format, e.g. 2014-10-19T19:19:04
+    """
+    from datetime import datetime as dt
+    now = dt.utcnow()
+    now = now.replace(microsecond=0)
+    return dt.isoformat(now)
+
 class CollScientiaLoggingFilter(logging.Filter):
 
     def __init__(self):
