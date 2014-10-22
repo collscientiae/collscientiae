@@ -32,116 +32,107 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
         a.text = '#' + m.group(2)
         return a
 
-
-class IncludePattern(markdown.inlinepatterns.Pattern):
-
+class LinkedDocument(markdown.inlinepatterns.Pattern):
+    """
+    parent class for Include, Link and Knowl Patterns
+    """
     def __init__(self, pattern, cp):
         self.cp = cp
-        super(IncludePattern, self).__init__(pattern)
+        assert isinstance(cp, ContentProcessor)
+        self.doc_id = None
+        self.label = None
+        self.limit = None
+        self.target_ns = None
+        super(LinkedDocument, self).__init__(pattern)
 
-    def handleMatch(self, m):
-        from markdown.util import etree
+
+    def parse_raw_docid(self, m):
         from .models import namespace_pattern
-        raw_id = m.group(2).strip()
+
+        self.tokens = m.group(2).split("|")
+        raw_id = self.tokens[0].strip()
         idsplit = raw_id.split("/")
         doc_id = idsplit[-1].split()
         if len(doc_id) == 1:
-            doc_id = doc_id[0]
-            label = None
-            limit = None
+            self.doc_id = doc_id[0]
         elif len(doc_id) == 2:
-            doc_id, label = doc_id
-            limit = None
+            self.doc_id, self.label = doc_id
         elif len(doc_id) == 3:
-            doc_id, label, limit = doc_id
+            self.doc_id, self.label, self.limit = doc_id
         else:
             raise ValueError("Include ID '%s' is invalid" % raw_id)
-        assert document_id_pattern.match(doc_id), "Document ID '%s' invalid" % doc_id
+
         assert 1 <= len(idsplit) <= 2
         if len(idsplit) == 2:
-            target_ns = idsplit[0]
+            self.target_ns = idsplit[0]
         else:
-            target_ns = self.cp.document.namespace
-        target_ns = self.cp.cs.remap_module(self.cp.document.namespace, target_ns)
-        assert namespace_pattern.match(target_ns)
-        link = target_ns + "/" + doc_id
+            self.target_ns = self.cp.document.namespace
+        self.target_ns = self.cp.cs.remap_module(self.cp.document.namespace, self.target_ns)
+
+        assert document_id_pattern.match(self.doc_id), "Document ID '%s' invalid" % doc_id
+        print self.target_ns, self.cp.document.namespace
+        assert namespace_pattern.match(self.target_ns)
+
+    def get_link(self):
+        return self.target_ns + "/" + self.doc_id
+
+    def set_element_attributes(self, element):
+
+        if self.label:
+            element.set("label", self.label)
+        if self.limit:
+            element.set("limit", self.limit)
+
+        if len(self.tokens) > 1:
+            t = ''.join(self.tokens[1:])
+            element.text = t.strip()
+        else:
+            element.text = self.doc_id
+
+
+class IncludePattern(LinkedDocument):
+
+    def handleMatch(self, m):
+        from markdown.util import etree
+        self.parse_raw_docid(m)
+        link = self.get_link()
         div = etree.Element("div")
         div.set("include", link)
         div.set("class", "include")
-        if label:
-            div.set("label", label)
-        if limit:
-            div.set("limit", limit)
+        self.set_element_attributes(div)
         return div
 
-class LinkPattern(markdown.inlinepatterns.Pattern):
+class LinkPattern(LinkedDocument):
 
-    def __init__(self, pattern, cp):
-        self.cp = cp
-        super(LinkPattern, self).__init__(pattern)
 
     def handleMatch(self, m):
         from markdown.util import etree
-        from .models import namespace_pattern
 
-        tokens = m.group(2).split("|")
-        raw_id = tokens[0].strip()
-        kidsplit = raw_id.split("/")
-        assert document_id_pattern.match(kidsplit[-1]), "Document ID '%s' invalid" % kidsplit[-1]
-        assert 1 <= len(kidsplit) <= 2
-        if len(kidsplit) == 2:
-            target_ns, doc_id = kidsplit
-        else:
-            target_ns = self.cp.document.namespace
-            doc_id = kidsplit[-1]
-        target_ns = self.cp.cs.remap_module(self.cp.document.namespace, target_ns)
-        assert namespace_pattern.match(target_ns)
-        link = target_ns + "/" + doc_id
+        self.parse_raw_docid(m)
+
+        link = self.get_link()
+        self.cp.db.register_link(self.target_ns, self.doc_id, self.cp.document)
+
         a = etree.Element("a")
-
-        self.cp.db.register_link(target_ns, doc_id, self.cp.document)
         a.set("href", "../%s.html" % link)
-
-        if len(tokens) > 1:
-            t = ''.join(tokens[1:])
-            a.text = t.strip()
-        else:
-            a.text = kidsplit[-1]
+        self.set_element_attributes(a)
         return a
 
-class KnowlPattern(markdown.inlinepatterns.Pattern):
+class KnowlPattern(LinkedDocument):
 
-    def __init__(self, pattern, cp):
-        self.cp = cp
-        super(KnowlPattern, self).__init__(pattern)
 
     def handleMatch(self, m):
         from markdown.util import etree
-        from .models import namespace_pattern
 
-        tokens = m.group(2).split("|")
-        raw_id = tokens[0].strip()
-        kidsplit = raw_id.split("/")
-        assert document_id_pattern.match(kidsplit[-1]), "Document ID '%s' invalid" % kidsplit[-1]
-        assert 1 <= len(kidsplit) <= 2
-        if len(kidsplit) == 2:
-            target_ns, doc_id = kidsplit
-        else:
-            target_ns = self.cp.document.namespace
-            doc_id = kidsplit[-1]
-        target_ns = self.cp.cs.remap_module(self.cp.document.namespace, target_ns)
-        assert namespace_pattern.match(target_ns)
-        link = target_ns + "/" + doc_id
+        self.parse_raw_docid(m)
+
+        link = self.get_link()
+        self.cp.db.register_knowl(self.target_ns, self.doc_id, self.cp.document)
+
         a = etree.Element("a")
-
-        self.cp.db.register_knowl(target_ns, doc_id, self.cp.document)
         a.set("knowl", link)
+        self.set_element_attributes(a)
 
-        if len(tokens) > 1:
-            t = ''.join(tokens[1:])
-            a.text = t.strip()
-        else:
-            a.text = kidsplit[-1]
         return a
 
 
