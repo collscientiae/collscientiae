@@ -53,6 +53,9 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
         raw_id = self.tokens[0].strip()
         idsplit = raw_id.split("/")
         doc_id = idsplit[-1].split()
+        # reset label and limit and analyze the ID in detail
+        self.label = None
+        self.limit = None
         if len(doc_id) == 1:
             self.doc_id = doc_id[0]
         elif len(doc_id) == 2:
