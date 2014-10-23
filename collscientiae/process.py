@@ -32,10 +32,13 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
         a.text = '#' + m.group(2)
         return a
 
+
 class LinkedDocument(markdown.inlinepatterns.Pattern):
+
     """
     parent class for Include, Link and Knowl Patterns
     """
+
     def __init__(self, pattern, cp):
         self.cp = cp
         assert isinstance(cp, ContentProcessor)
@@ -44,7 +47,6 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
         self.limit = None
         self.target_ns = None
         super(LinkedDocument, self).__init__(pattern)
-
 
     def handleMatch(self, m):
         from .models import namespace_pattern
@@ -105,8 +107,8 @@ class IncludePattern(LinkedDocument):
         self.set_element_attributes(div)
         return div
 
-class LinkPattern(LinkedDocument):
 
+class LinkPattern(LinkedDocument):
 
     def handleMatch(self, m):
         LinkedDocument.handleMatch(self, m)
@@ -120,8 +122,8 @@ class LinkPattern(LinkedDocument):
         self.set_element_attributes(a)
         return a
 
-class KnowlPattern(LinkedDocument):
 
+class KnowlPattern(LinkedDocument):
 
     def handleMatch(self, m):
         LinkedDocument.handleMatch(self, m)

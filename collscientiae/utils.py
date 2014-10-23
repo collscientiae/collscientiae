@@ -21,6 +21,7 @@ def get_creation_date():
     now = now.replace(microsecond=0)
     return dt.isoformat(now)
 
+
 class CollScientiaLoggingFilter(logging.Filter):
 
     def __init__(self):
