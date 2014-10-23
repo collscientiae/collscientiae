@@ -46,7 +46,7 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
         super(LinkedDocument, self).__init__(pattern)
 
 
-    def parse_raw_docid(self, m):
+    def handleMatch(self, m):
         from .models import namespace_pattern
 
         self.tokens = m.group(2).split("|")
@@ -96,8 +96,8 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
 class IncludePattern(LinkedDocument):
 
     def handleMatch(self, m):
+        LinkedDocument.handleMatch(self, m)
         from markdown.util import etree
-        self.parse_raw_docid(m)
         link = self.get_link()
         div = etree.Element("div")
         div.set("include", link)
@@ -109,9 +109,8 @@ class LinkPattern(LinkedDocument):
 
 
     def handleMatch(self, m):
+        LinkedDocument.handleMatch(self, m)
         from markdown.util import etree
-
-        self.parse_raw_docid(m)
 
         link = self.get_link()
         self.cp.db.register_link(self.target_ns, self.doc_id, self.cp.document)
@@ -125,9 +124,8 @@ class KnowlPattern(LinkedDocument):
 
 
     def handleMatch(self, m):
+        LinkedDocument.handleMatch(self, m)
         from markdown.util import etree
-
-        self.parse_raw_docid(m)
 
         link = self.get_link()
         self.cp.db.register_knowl(self.target_ns, self.doc_id, self.cp.document)
