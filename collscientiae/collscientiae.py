@@ -108,6 +108,13 @@ class CollScientiae(object):
         return get_yaml(config_fn)
 
     def get_documents(self):
+        """
+        This helper iterates through all the documentation modules' files,
+        sets the names and paths properly, reads the markdown contents,
+        and then yields the full package of module, path, ID and content.
+
+        It's used in :func:`process`.
+        """
         from os.path import join, isdir, splitext, relpath, sep
         from os import walk, listdir
 
@@ -158,6 +165,10 @@ class CollScientiae(object):
         self.j2env.globals["doc_root_hash"] = self.processor.get_root_hash()
 
     def check_dirs(self):
+        """
+        Cleans the target directory. This gets rid of the `.git`, too!
+        (Hence, for publishing, the `makefile` re-initializes the GIT repository)
+        """
         from os import makedirs
         from os.path import exists
         from shutil import rmtree
@@ -180,5 +191,5 @@ if __name__ == "__main__":
         "the second the theme directory (containing an 'src' directory with" \
         "'static' files and the html templates) and" \
         "third is the empty target directory where everything is rendered into."
-    r = CollScientiae(*sys.argv[1:])
-    r.render()
+    cs = CollScientiae(*sys.argv[1:])
+    cs.render()

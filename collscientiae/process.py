@@ -45,6 +45,7 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
         self.doc_id = None
         self.label = None
         self.limit = None
+        self.tokens = None
         self.target_ns = None
         super(LinkedDocument, self).__init__(pattern)
 
@@ -53,8 +54,8 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
 
         self.tokens = m.group(2).split("|")
         raw_id = self.tokens[0].strip()
-        idsplit = raw_id.split("/")
-        doc_id = idsplit[-1].split()
+        id_split = raw_id.split("/")
+        doc_id = id_split[-1].split()
         # reset label and limit and analyze the ID in detail
         self.label = None
         self.limit = None
@@ -67,15 +68,14 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
         else:
             raise ValueError("Include ID '%s' is invalid" % raw_id)
 
-        assert 1 <= len(idsplit) <= 2
-        if len(idsplit) == 2:
-            self.target_ns = idsplit[0]
+        assert 1 <= len(id_split) <= 2
+        if len(id_split) == 2:
+            self.target_ns = id_split[0]
         else:
             self.target_ns = self.cp.document.namespace
         self.target_ns = self.cp.cs.remap_module(self.cp.document.namespace, self.target_ns)
 
         assert document_id_pattern.match(self.doc_id), "Document ID '%s' invalid" % doc_id
-        print self.target_ns, self.cp.document.namespace
         assert namespace_pattern.match(self.target_ns)
 
     def get_link(self):
