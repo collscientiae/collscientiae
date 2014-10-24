@@ -197,16 +197,26 @@ class Index(object):
         One single index entry
         """
 
-        __slots__ = ["title", "href", "description", "type"]
+        __slots__ = ["title", "namespace", "docid", "description", "type", "prefix"]
 
         types = ("dir", "file", "hashtag")
 
-        def __init__(self, title, href, description=None, type="file"):
+        def __init__(self, title, ns, docid, description=None, type="file", prefix=0):
             assert type in Index.Entry.types
             self.title = title
-            self.href = href + ".html"
+            self.namespace = ns
+            self.docid = docid
             self.description = description
             self.type = type
+            self.prefix = prefix
+
+        @property
+        def href(self):
+            h = ''.join(["../"] * self.prefix)
+            if self.namespace:
+                h += self.namespace + "/"
+            h += self.docid + ".html"
+            return h
 
     def __init__(self, title):
         self.title = title

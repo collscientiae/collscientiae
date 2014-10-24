@@ -72,7 +72,7 @@ class OutputRenderer(object):
             else:
                 descr = None
                 title = mytitle(key)
-            idx += Index.Entry(title, href, type=type, description=descr)
+            idx += Index.Entry(title, None, href, type=type, description=descr)
 
         bc = []
         if doc_id is None:
@@ -157,7 +157,7 @@ class OutputRenderer(object):
 
         idx = Index("Hashtag Index")
         for ht in hashtags:
-            idx += Index.Entry(ht[0], ht[0], type="hashtag")
+            idx += Index.Entry(ht[0], None, ht[0], type="hashtag")
 
         bc = [("#", "index")]
         self.render_index(idx, hashtag_dir, fn="index", breadcrum=bc)
@@ -168,6 +168,8 @@ class OutputRenderer(object):
             bc2 = bc + [(hashtag, hashtag)]
             idx = Index("Hashtag #" + hashtag)
             for d in docs:
-                idx += Index.Entry('{0.docid}'.format(d),
-                                   '../{0.namespace}/{0.docid}'.format(d))
+                idx += Index.Entry(d.title,
+                                   d.namespace,
+                                   d.docid,
+                                   prefix=1)
             self.render_index(idx, hashtag_dir, fn=hashtag, breadcrum=bc2)
