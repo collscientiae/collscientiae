@@ -165,7 +165,7 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             code.text = AtomicString('%s\n%s\n' % (code.text, block.rstrip()))
         else:
             # This is a new codeblock. Create the elements and insert text.
-            cell_id = str(self.cell_id_counter)
+            cell_id = "sagecell-%s" % self.cell_id_counter
             self.cell_id_counter += 1
 
             outer = etree.SubElement(parent, 'div')
@@ -190,6 +190,8 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             else: # no preceding codeblock description, we assume python
                 #outer.set("mode", "default")
                 inner.set("class", "language-python")
+
+            outer.set("class", "sagecell_init")
 
 
 
