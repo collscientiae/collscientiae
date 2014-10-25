@@ -155,8 +155,8 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
         sibling = self.lastChild(parent)
         block = blocks.pop(0)
         theRest = ''
-        if sibling and sibling.tag == "code" and len(sibling) \
-                and sibling[0].tag == "pre":
+        if sibling and sibling.tag == 'div' and len(sibling) \
+                and sibling[0].tag == 'code':
             # The previous block was a code block. As blank lines do not start
             # new code blocks, append this block to the previous, adding back
             # linebreaks removed from the split into a list.
@@ -168,8 +168,8 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             cell_id = str(self.cell_id_counter)
             self.cell_id_counter += 1
 
-            outer = etree.SubElement(parent, "code")
-            inner = etree.SubElement(outer, 'pre')
+            outer = etree.SubElement(parent, 'div')
+            inner = etree.SubElement(outer, 'code')
 
             m = CollScientiaCodeBlockProcessor.codeblock_pattern.match(sibling.text)
             if m:
@@ -181,10 +181,17 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
                     outer.set("mode", mode)
                     outer.set("id", cell_id)
 
+                    inner.set("class", "language-" + mode)
                     # inner.tag = "pre"
                     inner.set("type", "text/x-sage")
 
                 parent.remove(sibling)
+
+            else: # no preceding codeblock description, we assume python
+                #outer.set("mode", "default")
+                inner.set("class", "language-python")
+
+
 
             block, theRest = self.detab(block)
             inner.text = AtomicString('%s\n' % block.rstrip())
