@@ -87,12 +87,12 @@ class OutputRenderer(object):
     def output(self):
         self.log.info("rendering into %s" % self.cs.targ)
         self.copy_static_files()
-        self.output_main_index()
-        self.output_documents()
-        self.output_document_indices()
-        self.output_hashtags()
+        self.main_index()
+        self.documents()
+        self.document_indices()
+        self.hashtags()
 
-    def output_main_index(self):
+    def main_index(self):
         index_fn = join(self.cs.targ, "index.html")
         title = self.cs.config["title"]
         # ordered, like in the config file!
@@ -102,7 +102,7 @@ class OutputRenderer(object):
                              title=title,
                              modules=modules)
 
-    def output_document_indices(self):
+    def document_indices(self):
         self.log.info("writing document index files")
 
         def walk(m, node, parents, depth=0):
@@ -123,7 +123,7 @@ class OutputRenderer(object):
             self.render_document_index(module, None, module.tree)
             walk(module, module.tree, [])
 
-    def output_documents(self):
+    def documents(self):
         self.log.info("writing document templates")
         for ns, module in self.cs.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
@@ -149,7 +149,7 @@ class OutputRenderer(object):
                                      backlinks=backlinks,
                                      level=1)
 
-    def output_hashtags(self):
+    def hashtags(self):
         self.log.info("  ... and hashtags")
         hashtag_dir = join(self.cs.targ, "hashtag")
         hashtags = sorted(self.cs.db.hashtags.iteritems(),
@@ -163,13 +163,14 @@ class OutputRenderer(object):
         self.render_index(idx, hashtag_dir, fn="index", breadcrum=bc)
 
         for hashtag, docs in hashtags:
-            #out_fn = join(hashtag_dir, hashtag + ".html")
+            # out_fn = join(hashtag_dir, hashtag + ".html")
             self.log.debug("  # " + hashtag)
-            bc2 = bc + [(hashtag, hashtag)]
+            bc2 = bc + [(hashtag.title(), hashtag)]
             idx = Index("Hashtag #" + hashtag)
             for d in docs:
                 idx += Index.Entry(d.title,
                                    d.namespace,
                                    d.docid,
+                                   description=d.subtitle,
                                    prefix=1)
             self.render_index(idx, hashtag_dir, fn=hashtag, breadcrum=bc2)
