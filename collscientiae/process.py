@@ -29,7 +29,8 @@ class HashTagPattern(markdown.inlinepatterns.Pattern):
         ht = m.group(2).lower()
         self.cp.db.register_hashtag(ht, self.cp.document)
         a.set('href', '../hashtag/{}.html'.format(ht))
-        a.text = '#' + m.group(2)
+        idx = m.lastindex - 1
+        a.text = '#' + m.group(idx)
         return a
 
 
@@ -284,6 +285,11 @@ class ContentProcessor(object):
         hashtag_keywords_rex = r'#([a-zA-Z][a-zA-Z0-9-_]{1,})\b'
         md.inlinePatterns.add('hashtag',
                               HashTagPattern(hashtag_keywords_rex, self),
+                              '<escape')
+
+        hashtag_keywords_rex2 = r'#\[([a-zA-Z][a-zA-Z0-9-_]{1,})\s+([^\]]+)\]'
+        md.inlinePatterns.add('hashtag2',
+                              HashTagPattern(hashtag_keywords_rex2, self),
                               '<escape')
 
         # Tells markdown to process "wikistyle" links with optional title
