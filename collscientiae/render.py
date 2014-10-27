@@ -182,7 +182,7 @@ class OutputRenderer(object):
             idx += Index.Entry(ht[0], ht[0], type="hashtag")
 
         bc = [("#", "index")]
-        self.render_index(idx, hashtag_dir, target_fn="index", breadcrum=bc)
+        self.render_index(idx, hashtag_dir, namespace="hashtag", target_fn="index", breadcrum=bc)
 
         for hashtag, docs in hashtags:
             # out_fn = join(hashtag_dir, hashtag + ".html")
