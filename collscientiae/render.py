@@ -135,7 +135,11 @@ class OutputRenderer(object):
                 out_fn = join(doc_dir, doc.docid + ".html")
                 backlinks = self.cs.db.backlinks[(module.namespace, key)]
                 self.log.debug("  + %s" % out_fn)
-                seealso = [module[_] for _ in doc.seealso]
+                try:
+                    seealso = [module[_] for _ in doc.seealso]
+                except AssertionError as ex:
+                    raise Exception("Error while processing 'seealso' in '{}/{}': \"{}\""
+                                    .format(ns, key, ex.message))
                 bc = doc.breadcrum()
                 title = " - ".join(mytitle(_[0]) for _ in reversed(bc))
                 title += " - " + mytitle(ns)

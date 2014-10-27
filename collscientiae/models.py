@@ -65,6 +65,9 @@ class DocumentationModule(object):
         self.tree = defaultdict(recursive_dict)
 
     def __getitem__(self, key):
+        assert key in self._documents,\
+            "Document '%s' does not exist in module '%s'" % (key, self.namespace)
+
         return self._documents[key]
 
     def __setitem__(self, key, item):
