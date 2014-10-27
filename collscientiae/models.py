@@ -215,8 +215,7 @@ class Index(object):
             h = ''.join(["../"] * self.prefix)
             if self.namespace:
                 h += self.namespace + "/"
-            h += self.docid + ".html"
-            return h
+            return h + self.docid
 
     def __init__(self, title):
         self.title = title

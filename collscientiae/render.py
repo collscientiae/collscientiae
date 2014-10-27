@@ -62,17 +62,17 @@ class OutputRenderer(object):
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
             if doc_id is None:
-                href = key
+                docid = key
             else:
-                href = doc_id + "." + key
+                docid = doc_id + "." + key
             if type == "file":
-                doc = module[href]
+                doc = module[docid]
                 descr = doc.subtitle
                 title = doc.title
             else:
                 descr = None
                 title = mytitle(key)
-            idx += Index.Entry(title, None, href, type=type, description=descr)
+            idx += Index.Entry(title, None, docid, type=type, description=descr)
 
         bc = []
         if doc_id is None:
