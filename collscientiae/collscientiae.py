@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 from .models import DocumentationModule
-from .utils import get_yaml, get_markdown, create_logger, mytitle, get_creation_date
+from .utils import get_yaml, get_markdown, create_logger, mytitle, indexsort, get_creation_date
 from .db import CollScientiaeDB, DuplicateDocumentError
 from .models import Document
 from .process import ContentProcessor
@@ -62,6 +62,7 @@ class CollScientiae(object):
         self.j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
         self.j2env.filters["prefix"] = filter_prefix
         self.j2env.filters["title"] = mytitle
+        self.j2env.filters["indexsort"] = indexsort
 
         # initializing all the main components
         self.db = CollScientiaeDB(self)

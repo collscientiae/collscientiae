@@ -12,6 +12,16 @@ def mytitle(s):
     return s[0].title() + s[1:]
 
 
+def indexsort(idx):
+    """
+    Used in `index.html` template to sort the :class:`.Index` entries by "sort" and "title"
+    :param idx:
+    :return:
+    """
+    idx = sorted(idx, key=lambda i: (i.sort, i.title))
+    return idx
+
+
 def get_creation_date():
     """
     This must be UTC and ISO format, e.g. 2014-10-19T19:19:04

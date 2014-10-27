@@ -69,6 +69,7 @@ class CollScientiaeDB(object):
 
     def register_knowl(self, ns, knowl_id, document):
         self.knowls[(ns, knowl_id)].add(document)
+        self.register_link(ns, knowl_id, document)
 
     def register_link(self, ns, link_id, document):
         # don't register links to itself

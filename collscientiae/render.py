@@ -51,6 +51,7 @@ class OutputRenderer(object):
                              title=index.title,
                              namespace=namespace,
                              breadcrum=breadcrum,
+                             entrytypes=Index.Entry.types,
                              level=level,
                              index=index)
 
@@ -61,6 +62,8 @@ class OutputRenderer(object):
         idx = Index(mytitle(module.namespace))
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
+            sort = None
+            group = None
             if doc_id is None:
                 docid = key
             else:
@@ -69,10 +72,13 @@ class OutputRenderer(object):
                 doc = module[docid]
                 descr = doc.subtitle
                 title = doc.title
+                sort = doc.sort
+                group = doc.group
             else:
                 descr = None
                 title = mytitle(key)
-            idx += Index.Entry(title, None, docid, type=type, description=descr)
+            idx += Index.Entry(title, docid,
+                               group=group, type=type, description=descr, sort=sort)
 
         bc = []
         if doc_id is None:
@@ -161,7 +167,7 @@ class OutputRenderer(object):
 
         idx = Index("Hashtag Index")
         for ht in hashtags:
-            idx += Index.Entry(ht[0], None, ht[0], type="hashtag")
+            idx += Index.Entry(ht[0], ht[0], type="hashtag")
 
         bc = [("#", "index")]
         self.render_index(idx, hashtag_dir, fn="index", breadcrum=bc)
@@ -173,8 +179,8 @@ class OutputRenderer(object):
             idx = Index("Hashtag #" + hashtag)
             for d in docs:
                 idx += Index.Entry(d.title,
-                                   d.namespace,
-                                   d.docid,
+                                   d.namespace + "/" + d.docid,
+                                   group=d.namespace,
                                    description=d.subtitle,
                                    prefix=1)
             self.render_index(idx, hashtag_dir, fn=hashtag, breadcrum=bc2)

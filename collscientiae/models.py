@@ -127,11 +127,13 @@ class Document(object):
         self.output = None
         self.authors = None
         self.tags = None
+        self.group = None
+        self.sort = 0.0
 
     def update(self, output, title=None, authors=None,
                subtitle=None, abstract=None,
-               tags=None, type=None,
-               seealso=None):
+               tags=None, type=None, group=None,
+               seealso=None, sort=None):
         assert type and type in Document.allowed_types,\
             "type is '%s'" % type
         self.type = type
@@ -142,10 +144,13 @@ class Document(object):
         # output contains html (or latex) after processing the content
         self.output = output
         self.authors = authors
+        if sort:
+            self.sort = float(sort)
 
         if tags is not None and not isinstance(tags, (list, tuple)):
             tags = [tags]
         self.tags = tags
+        self.group = group
 
     @property
     def namespace(self):
@@ -198,26 +203,34 @@ class Index(object):
 
         """
         One single index entry
+
+        * `title`: Title
+        * `group`: if given, the output index is grouped by this
+        * `docid`: the document ID to reference to
+        * `description`: e.g. the subtitle of a document
+        * `type`: directory, file or hashtag
+        * `prefix`: prefixing the referenced link, usually 0 (?)
+        * `sort`: a floating point number, used in :func:`.utils.indexsort` to break
+                  strict alphabetical sorting.
         """
 
-        __slots__ = ["title", "namespace", "docid", "description", "type", "prefix"]
+        __slots__ = ["title", "group", "docid", "description", "type", "prefix", "sort"]
 
         types = ("dir", "file", "hashtag")
 
-        def __init__(self, title, ns, docid, description=None, type="file", prefix=0):
+        def __init__(self, title, docid, group=None, description=None, type="file", sort=None, prefix=0):
             assert type in Index.Entry.types
             self.title = title
-            self.namespace = ns
+            self.group = group
             self.docid = docid
             self.description = description
             self.type = type
             self.prefix = prefix
+            self.sort = sort
 
         @property
         def href(self):
             h = ''.join(["../"] * self.prefix)
-            if self.namespace:
-                h += self.namespace + "/"
             return h + self.docid
 
     def __init__(self, title):

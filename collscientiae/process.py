@@ -189,13 +189,11 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
 
                 parent.remove(sibling)
 
-            else: # no preceding codeblock description, we assume python
+            else:  # no preceding codeblock description, we assume python
                 #outer.set("mode", "default")
                 inner.set("class", "language-python")
 
             outer.set("class", "sagecell_init")
-
-
 
             block, theRest = self.detab(block)
             inner.text = AtomicString('%s\n' % block.rstrip())
@@ -241,8 +239,8 @@ class ContentProcessor(object):
     In the future, it might also be able to transform to LaTeX or PDF.
     """
 
-    allowed_keys = ["authors", "copyright", "title", "type", "tags",
-                    "subtitle", "abstract", "date", "seealso"]
+    allowed_keys = ["authors", "copyright", "title", "type", "tags", "group",
+                    "subtitle", "abstract", "date", "seealso", "sort"]
 
     required_keys = ["title"]
 
