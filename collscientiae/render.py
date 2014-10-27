@@ -149,6 +149,8 @@ class OutputRenderer(object):
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)
                 out_fn = join(doc_dir, doc.docid + ".html")
+                out_src_fn = join(doc_dir, doc.docid + ".txt")
+                link(doc.src_fn, out_src_fn)
                 backlinks = self.cs.db.backlinks[(module.namespace, key)]
                 self.log.debug("  + %s" % out_fn)
                 try:

@@ -111,12 +111,15 @@ class Document(object):
 
     allowed_types = ["document", "tutorial", "example", "reference"]
 
-    def __init__(self, docid, md_raw, ns):
+    def __init__(self, docid, md_raw, ns, src_fn):
         assert docid is not None and id_pattern.match(docid)
         self.docid = docid
         self._ns = ns
         self.md_raw = md_raw
-        self.backlinks = None  # need to be set after *all* documents are processed
+        self.src_fn = src_fn
+
+        # need to be set after *all* documents are processed
+        self.backlinks = None
         # these are defined in self.update(...)
         self.type = None
         self.title = None

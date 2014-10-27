@@ -152,7 +152,8 @@ class CollScientiae(object):
                 ns = module.namespace
                 doc = Document(docid=docid,
                                md_raw=md_raw,
-                               ns=ns)
+                               ns=ns,
+                               src_fn=filepath)
                 html, meta = self.processor.convert(doc)
                 doc.update(output=html, **meta)
                 self.db.register(doc)
