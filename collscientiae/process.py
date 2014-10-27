@@ -56,16 +56,16 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
         self.tokens = m.group(2).split("|")
         raw_id = self.tokens[0].strip()
         id_split = raw_id.split("/")
-        doc_id = id_split[-1].split()
+        doc_id_tokens = id_split[-1].split()
         # reset label and limit and analyze the ID in detail
         self.label = None
         self.limit = None
-        if len(doc_id) == 1:
-            self.doc_id = doc_id[0]
-        elif len(doc_id) == 2:
-            self.doc_id, self.label = doc_id
-        elif len(doc_id) == 3:
-            self.doc_id, self.label, self.limit = doc_id
+        if len(doc_id_tokens) == 1:
+            self.doc_id = doc_id_tokens[0]
+        elif len(doc_id_tokens) == 2:
+            self.doc_id, self.label = doc_id_tokens
+        elif len(doc_id_tokens) == 3:
+            self.doc_id, self.label, self.limit = doc_id_tokens
         else:
             raise ValueError("Include ID '%s' is invalid" % raw_id)
 
@@ -86,6 +86,7 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
 
         if self.label:
             element.set("label", self.label)
+
         if self.limit:
             element.set("limit", self.limit)
 
@@ -93,7 +94,7 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
             t = ''.join(self.tokens[1:])
             element.text = t.strip()
         else:
-            element.text = self.doc_id
+            element.text = self.doc_id.split(".")[-1]
 
 
 class IncludePattern(LinkedDocument):
