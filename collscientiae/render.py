@@ -49,7 +49,7 @@ class OutputRenderer(object):
         self.render_template("index.html",
                              index_fn,
                              title=index.title,
-                             namespace=namespace,
+                             namespace=namespace.lower() if namespace else None,
                              breadcrum=breadcrum,
                              entrytypes=Index.Entry.types,
                              level=level,
@@ -58,7 +58,7 @@ class OutputRenderer(object):
     def render_document_index(self, module, doc_id, children):
         assert isinstance(module, DocumentationModule)
         ns = module.namespace
-        doc_dir = join(self.cs.targ, ns)
+        doc_dir = join(self.cs.targ, ns.lower())
         idx = Index(mytitle(module.namespace))
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
@@ -143,7 +143,7 @@ class OutputRenderer(object):
         self.log.info("writing document templates")
         for ns, module in self.cs.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
-            doc_dir = join(self.cs.targ, ns)
+            doc_dir = join(self.cs.targ, ns.lower())
             makedirs(doc_dir)
 
             for key, doc in module.iteritems():
@@ -181,13 +181,15 @@ class OutputRenderer(object):
         for ht in hashtags:
             idx += Index.Entry(ht[0], ht[0], type="hashtag")
 
-        bc = [("#", "index")]
-        self.render_index(idx, hashtag_dir, namespace="hashtag", target_fn="index", breadcrum=bc)
+        self.render_index(idx,
+                          hashtag_dir,
+                          namespace="hashtag",
+                          target_fn="index")
 
         for hashtag, docs in hashtags:
             # out_fn = join(hashtag_dir, hashtag + ".html")
             self.log.debug("  # " + hashtag)
-            bc2 = bc + [(hashtag.title(), hashtag)]
+            bc2 = [(hashtag.title(), hashtag)]
             idx = Index("Hashtag #" + hashtag)
             for d in docs:
                 idx += Index.Entry(d.title,
@@ -195,4 +197,8 @@ class OutputRenderer(object):
                                    group=d.namespace,
                                    description=d.subtitle,
                                    prefix=1)
-            self.render_index(idx, hashtag_dir, target_fn=hashtag, breadcrum=bc2)
+            self.render_index(idx,
+                              hashtag_dir,
+                              target_fn=hashtag,
+                              namespace="hashtag",
+                              breadcrum=bc2)
