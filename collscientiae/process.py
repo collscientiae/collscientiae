@@ -337,11 +337,15 @@ class ContentProcessor(object):
 
         # no arrays for selected keys
         for key in ContentProcessor.allowed_keys:
-            if key in ["authors", "seealso", "type"]:
-                continue
             if key in meta:
-                # and join multilines
-                meta[key] = '\n'.join(meta[key])
+                if key == "type":
+                    continue
+                elif key in ["authors", "seealso"]:
+                    # filter empty ones
+                    meta[key] = filter(lambda x : len(x) > 0, meta[key])
+                else:
+                    # and join multilines
+                    meta[key] = '\n'.join(meta[key])
 
         # fixup seealso
         if "seealso" in meta:
