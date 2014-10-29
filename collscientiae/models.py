@@ -3,6 +3,7 @@ from collections import defaultdict
 import yaml
 import inspect
 import re
+from .utils import indexsort
 from .db import DuplicateDocumentError
 
 namespace_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]+$")
@@ -132,6 +133,8 @@ class Document(object):
         self.tags = None
         self.group = None
         self.sort = 0.0
+        # pointers to next/previous documents for links on the website
+        self.prev = self.next = None
 
     def update(self, output, title=None, authors=None,
                subtitle=None, abstract=None,
@@ -246,4 +249,4 @@ class Index(object):
         return self
 
     def __iter__(self):
-        return iter(self.entries)
+        return iter(indexsort(self.entries))

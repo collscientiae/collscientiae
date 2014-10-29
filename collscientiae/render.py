@@ -55,7 +55,8 @@ class OutputRenderer(object):
                              level=level,
                              index=index)
 
-    def render_document_index(self, module, doc_id, children):
+    def render_document_index(self, module, doc_id, children, prev=None):
+        first = this = None
         assert isinstance(module, DocumentationModule)
         ns = module.namespace
         doc_dir = join(self.cs.targ, ns.lower())
@@ -84,6 +85,19 @@ class OutputRenderer(object):
                                description=descr,
                                sort=sort)
 
+            # TODO this doesn't obey the "sort" ordering
+            if len(node) == 0:  # it's a document, set prev/next
+                this = module[docid]
+                if prev is not None:
+                    this.prev = prev
+                    prev.next = this
+                else:
+                    first = this
+                prev = this
+
+        first.prev = this
+        this.next = first
+
         bc = []
         if doc_id is None:
             fn = "index"
@@ -102,8 +116,8 @@ class OutputRenderer(object):
         self.log.info("rendering into %s" % self.cs.targ)
         self.copy_static_files()
         self.main_index()
-        self.documents()
         self.document_indices()
+        self.documents()
         self.hashtags()
 
     def main_index(self):
@@ -117,23 +131,33 @@ class OutputRenderer(object):
                              modules=modules)
 
     def document_indices(self):
+        """
+        This iterates through all documents and sets the .prev and .next pointers.
+
+        This combines the the overall documentation ordering configuration
+        with the `meta['sort']` attribute of each document to create a total ordering.
+        """
+
         self.log.info("writing document index files")
 
-        def walk(m, node, parents, depth=0):
+        def walk(m, node, parents, depth=0, prev=None):
             assert isinstance(m, DocumentationModule)
             # print "  " * depth, "+", key, "INDEX" if len(node) > 0 else "LEAF"
+
+            for key, node2 in sorted(node.iteritems()):
+                p = parents[:]
+                p.append(key)
+                walk(m, node2, p, depth=depth + 1, prev=prev)
+
             if len(parents) > 0:
                 doc_id = ".".join(parents)
                 self.log.debug("    %s" % doc_id)
                 if doc_id not in m:
-                    self.render_document_index(m, doc_id, node)
+                    self.render_document_index(m, doc_id, node, prev=prev)
 
-            for key, node in node.iteritems():
-                p = parents[:]
-                p.append(key)
-                walk(m, node, p, depth=depth + 1)
-
-        for ns, module in self.cs.db.modules.iteritems():
+        # this ordering is important for the prev/next chaining of documents (!)
+        for ns in self.cs.config["modules"]:
+            module = self.cs.db.modules[ns]
             assert isinstance(module, DocumentationModule)
             self.log.debug("  I %s" % module.name)
             self.render_document_index(module, None, module.tree)
@@ -144,7 +168,7 @@ class OutputRenderer(object):
         for ns, module in self.cs.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
             doc_dir = join(self.cs.targ, ns.lower())
-            makedirs(doc_dir)
+            # makedirs(doc_dir)
 
             for key, doc in module.iteritems():
                 assert isinstance(doc, Document)

@@ -342,7 +342,7 @@ class ContentProcessor(object):
                     continue
                 elif key in ["authors", "seealso"]:
                     # filter empty ones
-                    meta[key] = filter(lambda x : len(x) > 0, meta[key])
+                    meta[key] = filter(lambda x: len(x) > 0, meta[key])
                 else:
                     # and join multilines
                     meta[key] = '\n'.join(meta[key])
