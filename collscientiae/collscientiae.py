@@ -119,6 +119,7 @@ class CollScientiae(object):
         from os.path import join, isdir, splitext, relpath, sep
         from os import walk, listdir
 
+        # ordering is important, added to an OrderedDict
         for doc_dir in [join(self.src, _) for _ in self.config["modules"]]:
 
             mod_config = get_yaml(join(doc_dir, "config.yaml"))
@@ -179,6 +180,15 @@ class CollScientiae(object):
         makedirs(self.targ)
 
     def render(self):
+        """
+        This is the most high-level routine.
+        It is a bit like a compiler, in such a sense that it has several passes:
+
+        1. read the data and configuration files
+        2. build internally data structures (in :class:`CollScientiaeDB` a list of trees, etc.)
+        3. check consistency (cross-references, etc.)
+        4. render output (static files, documents, index pages, source files, etc.)
+        """
         self.check_dirs()
         self.process()
         self.db.check_consistency()

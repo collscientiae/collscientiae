@@ -1,6 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import, unicode_literals
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 
 class DuplicateDocumentError(Exception):
@@ -23,7 +23,7 @@ class CollScientiaeDB(object):
         self.knowls = defaultdict(set)
 
         # maps all module namespaces to modules
-        self.modules = {}
+        self.modules = OrderedDict()
 
     def register(self, document):
         from .models import Document

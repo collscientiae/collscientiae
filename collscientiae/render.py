@@ -123,12 +123,11 @@ class OutputRenderer(object):
     def main_index(self):
         index_fn = join(self.cs.targ, "index.html")
         title = self.cs.config["title"]
-        # ordered, like in the config file!
-        modules = [self.cs.db.modules[_] for _ in self.cs.config["modules"]]
         self.render_template("index_modules.html",
                              index_fn,
                              title=title,
-                             modules=modules)
+                             # modules are ordered like in the config file, OrderedDict!
+                             modules=self.cs.db.modules.values())
 
     def document_indices(self):
         """
