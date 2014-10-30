@@ -1,11 +1,10 @@
 # -*- coding: utf8 -*-
 from __future__ import absolute_import
-from os.path import abspath, normpath, isdir, join, relpath, splitext, exists
+from os.path import normpath, join, relpath, splitext, exists
 from os import makedirs, walk, link
-from collscientiae.models import DocumentationModule, Index
-from collscientiae.utils import mytitle
+from .models import DocumentationModule, Index
+from .utils import mytitle
 from .models import Document
-import codecs
 
 
 class OutputRenderer(object):
@@ -55,13 +54,16 @@ class OutputRenderer(object):
                              level=level,
                              index=index)
 
-    def render_document_index(self, module, doc_id, children, prev=None):
-        first = this = None
+    def render_document_index(self, module, doc_id, cur_node, prev=None):
+        assert isinstance(cur_node, DocumentationModule.Node)
+        assert all(_.sort is not None for _ in cur_node.values())
         assert isinstance(module, DocumentationModule)
+        first = this = None
         ns = module.namespace
         doc_dir = join(self.cs.targ, ns.lower())
         idx = Index(mytitle(module.namespace))
-        for key, node in children.iteritems():
+        for key, node in cur_node.iteritems():
+
             type = "dir" if len(node) > 0 else "file"
             sort = 0.0
             group = title = descr = None
@@ -86,9 +88,13 @@ class OutputRenderer(object):
                                group=group,
                                type=type,
                                description=descr,
+                               node=node,
                                sort=sort)
 
-            # TODO this doesn't obey the "sort" ordering
+        # this is separate from above in order to obey the "sort" ordering
+        for entry in idx:
+            node = entry.node
+            docid = entry.docid
             if len(node) == 0:  # it's a document, set prev/next
                 this = module[docid]
                 if prev is not None:

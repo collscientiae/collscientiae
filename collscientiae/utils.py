@@ -11,14 +11,17 @@ def mytitle(s):
     """
     return s[0].title() + s[1:]
 
+indexsort_keyfunc = lambda i: (i.group, i.sort, i.title)
+
 
 def indexsort(idx):
     """
-    Used in `index.html` template to sort the :class:`.Index` entries by "sort" and "title"
+    Used in `index.html` template to sort the :class:`.Index` entries by
+    "group", "sort" and "title"
     :param idx:
     :return:
     """
-    idx = sorted(idx, key=lambda i: (i.sort, i.title))
+    idx = sorted(idx, key=indexsort_keyfunc)
     return idx
 
 

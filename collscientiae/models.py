@@ -47,6 +47,7 @@ class YAMLObjectCallingInit(yaml.YAMLObject):
 class DocumentationModule(object):
 
     class Node(defaultdict):
+
         @staticmethod
         def recursive_dict():
             return DocumentationModule.Node(DocumentationModule.Node.recursive_dict)
@@ -229,19 +230,21 @@ class Index(object):
                   strict alphabetical sorting.
         """
 
-        __slots__ = ["title", "group", "docid", "description", "type", "prefix", "sort"]
+        __slots__ = ["title", "group", "docid", "description", "type", "prefix", "sort", "node"]
 
         types = ("dir", "file", "hashtag")
 
-        def __init__(self, title, docid, group=None, description=None, type="file", sort=None, prefix=0):
+        def __init__(self, title, docid,
+                     group=None, description=None, type="file", sort=None, node=None, prefix=0):
             assert type in Index.Entry.types
             self.title = title
             self.group = group
             self.docid = docid
             self.description = description
             self.type = type
-            self.prefix = prefix
             self.sort = sort
+            self.node = node
+            self.prefix = prefix
 
         @property
         def href(self):
