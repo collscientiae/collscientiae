@@ -46,6 +46,12 @@ class CollScientiaeDB(object):
                     "Duplicate title '{0:s}' in {1:s}/{2:s} and {3:s}" \
                     .format(doc.title, ns, key, titles[doc.title])
                 titles[doc.title] = doc.docid
+                node = module.tree
+                for level in doc.docid.split("."):
+                    node = node[level]
+                assert len(node) == 0,\
+                    "There is the document {}/{} with the name of the node-directory '{}'!"\
+                    .format(key, doc, level)
 
         # for ht, ids in self.hashtags.iteritems():
         # self.log.debug("  #%s -> %s" % (ht, ids))
