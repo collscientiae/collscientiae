@@ -49,7 +49,7 @@ class OutputRenderer(object):
         self.render_template("index.html",
                              index_fn,
                              title=index.title,
-                             namespace=namespace.lower() if namespace else None,
+                             namespace=namespace,
                              breadcrum=breadcrum,
                              entrytypes=Index.Entry.types,
                              level=level,
