@@ -63,8 +63,8 @@ class OutputRenderer(object):
         idx = Index(mytitle(module.namespace))
         for key, node in children.iteritems():
             type = "dir" if len(node) > 0 else "file"
-            sort = None
-            group = None
+            sort = 0.0
+            group = title = descr = None
             if doc_id is None:
                 docid = key
             else:
@@ -75,9 +75,12 @@ class OutputRenderer(object):
                 title = doc.title
                 sort = doc.sort
                 group = doc.group
-            else:
+            elif type == "dir":
                 descr = None
-                title = mytitle(key)
+                title = node.title or mytitle(key)
+                sort = node.sort or 0.0
+            else:
+                assert "No case %s" % type
             idx += Index.Entry(title,
                                docid,
                                group=group,
@@ -103,7 +106,7 @@ class OutputRenderer(object):
             fn = "index"
         else:
             fn = doc_id
-            bc = Document.mk_breadcrum(doc_id)
+            bc = module.mk_breadcrum(ns, doc_id)
             idx.title = " - ".join(mytitle(_[0]) for _ in reversed(bc)) + " - " + idx.title
 
         self.render_index(idx,
@@ -181,7 +184,7 @@ class OutputRenderer(object):
                 except AssertionError as ex:
                     raise Exception("Error while processing 'seealso' in '{}/{}': \"{}\""
                                     .format(ns, key, ex.message))
-                bc = doc.breadcrum()
+                bc = module.mk_breadcrum(key, doc.docid, doc.title)
                 title = " - ".join(mytitle(_[0]) for _ in reversed(bc))
                 title += " - " + mytitle(ns)
                 self.render_template("document.html",

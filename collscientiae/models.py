@@ -46,6 +46,21 @@ class YAMLObjectCallingInit(yaml.YAMLObject):
 
 class DocumentationModule(object):
 
+    class Node(defaultdict):
+        @staticmethod
+        def recursive_dict():
+            return DocumentationModule.Node(DocumentationModule.Node.recursive_dict)
+
+        def __init__(self, default_factory=None):
+            if default_factory is None:
+                default_factory = DocumentationModule.Node.recursive_dict
+            defaultdict.__init__(self, default_factory)
+            self.title = None
+            self.sort = 0.0
+
+        def update(self, config):
+            self.__dict__.update(**config)
+
     def __init__(self, path, **config):
         # name and description are mandatory entries
         self.name = config.pop("name")
@@ -62,8 +77,7 @@ class DocumentationModule(object):
         # maps to documents via their unique ID
         self._documents = {}
         # tree of document IDs (key mapping to empty dict indicates a leaf)
-        recursive_dict = lambda: defaultdict(recursive_dict)
-        self.tree = defaultdict(recursive_dict)
+        self.tree = DocumentationModule.Node()
 
     def __getitem__(self, key):
         assert key in self._documents,\
@@ -95,6 +109,20 @@ class DocumentationModule(object):
 
     def __str__(self):
         return "Module {}".format(self.name)
+
+    def mk_breadcrum(self, ns, docid, title=None):
+        ret = []
+        ids = docid.split(".")
+        node = self.tree
+        for level, name in enumerate(ids):
+            node = node[name]
+            part_id = '.'.join(ids[:level + 1])
+            if level < len(ids) - 1:
+                n = node.title or name.title()
+            else:
+                n = title or node.title or ids[-1].title()
+            ret.append((n, part_id))
+        return ret
 
 
 class Section(YAMLObjectCallingInit):
@@ -168,25 +196,6 @@ class Document(object):
         assert self._ns is None, "Namespace can only be set once"
         assert namespace_pattern.match(ns)
         self._ns = ns
-
-    @staticmethod
-    def mk_breadcrum(docid, title=None):
-        ret = []
-        ids = docid.split(".")
-        for level, name in enumerate(ids):
-            part_id = '.'.join(ids[:level + 1])
-            if level < len(ids) - 1:
-                n = name.title()
-            else:
-                n = title or ids[-1].title()
-            ret.append((n, part_id))
-        return ret
-
-    def breadcrum(self):
-        """
-        :return: list of [("name", "link.to.it"), ...]
-        """
-        return self.mk_breadcrum(self.docid, self.title)
 
     def __repr__(self):
         return "Document[{0.namespace}/{0.docid}]".format(self)

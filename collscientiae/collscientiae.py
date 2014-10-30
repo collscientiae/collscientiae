@@ -167,6 +167,29 @@ class CollScientiae(object):
         # after we know all the output, this hash contains everything
         self.j2env.globals["doc_root_hash"] = self.processor.get_root_hash()
 
+    def read_node_config(self):
+        """
+        This goes through the nodes and reads the optinally existing config.yaml
+        to set title and sort priority.
+        """
+        from os.path import sep, exists
+        self.log.info("node configurations")
+        # This is very similar to .render.document_indices/walk, but for another purpose
+        # TODO unify this and make it non-recursive
+
+        def walk(node, parents):
+            for key, node2 in node.iteritems():
+                if len(node2) > 0:
+                    config_fn = sep.join([self.src] + parents + [key, "config.yaml"])
+                    if exists(config_fn):
+                        node2.update(get_yaml(config_fn))
+                p = parents[:]
+                p.append(key)
+                walk(node2, p)
+
+        for ns, module in self.db.modules.iteritems():
+            walk(module.tree, [ns])
+
     def check_dirs(self):
         """
         Cleans the target directory. This gets rid of the `.git`, too!
@@ -191,6 +214,7 @@ class CollScientiae(object):
         """
         self.check_dirs()
         self.process()
+        self.read_node_config()
         self.db.check_consistency()
         self.renderer.output()
 

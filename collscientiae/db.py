@@ -12,13 +12,13 @@ class DuplicateDocumentError(Exception):
 class CollScientiaeDB(object):
 
     def __init__(self, collscientiae):
-        # maps a hashtag to list of documents
         self.log = collscientiae.log
 
-        # sets of backlinks (from string to document)
-        self.hashtags = defaultdict(set)
         # would be cooler if these two are in DocumentationModule, but
         # it can happen that the link exists before the module exists - TODO
+        # maps a hashtag to list of documents
+        self.hashtags = defaultdict(set)
+        # sets of backlinks (from string to document)
         self.backlinks = defaultdict(set)
         self.knowls = defaultdict(set)
 
