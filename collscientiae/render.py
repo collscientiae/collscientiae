@@ -34,6 +34,14 @@ class OutputRenderer(object):
                     link(filepath, targetpath)
 
     def render_template(self, template_fn, target_fn, **data):
+        """
+        The one and only method which actually writes the template to disk.
+
+        :param template_fn:
+        :param target_fn:
+        :param data:
+        :return:
+        """
         tmpl = self.cs.j2env.get_template(template_fn)
         html = tmpl.render(**data)
         with open(target_fn, "wb") as output:
@@ -41,6 +49,16 @@ class OutputRenderer(object):
             output.write(b"\n")
 
     def render_index(self, index, directory, target_fn, namespace=None, breadcrum=None, level=1):
+        """
+
+        :param index:
+        :param directory:
+        :param target_fn:
+        :param namespace:
+        :param breadcrum:
+        :param level:
+        :return:
+        """
         assert isinstance(index, Index)
         if not exists(directory):
             makedirs(directory)
@@ -55,6 +73,14 @@ class OutputRenderer(object):
                              index=index)
 
     def render_document_index(self, module, doc_id, cur_node, prev=None):
+        """
+
+        :param module:
+        :param doc_id:
+        :param cur_node:
+        :param prev:
+        :return:
+        """
         assert isinstance(cur_node, DocumentationModule.Node)
         assert all(_.sort is not None for _ in cur_node.values())
         assert isinstance(module, DocumentationModule)
@@ -121,14 +147,6 @@ class OutputRenderer(object):
                           namespace=ns,
                           breadcrum=bc)
 
-    def output(self):
-        self.log.info("rendering into %s" % self.cs.targ)
-        self.copy_static_files()
-        self.main_index()
-        self.document_indices()
-        self.documents()
-        self.hashtags()
-
     def main_index(self):
         index_fn = join(self.cs.targ, "index.html")
         title = self.cs.config["title"]
@@ -140,10 +158,8 @@ class OutputRenderer(object):
 
     def document_indices(self):
         """
-        This iterates through all documents and sets the .prev and .next pointers.
-
-        This combines the the overall documentation ordering configuration
-        with the `meta['sort']` attribute of each document to create a total ordering.
+        This iterates through all documents and sets the .prev and .next pointers
+        inside the :func:`.render_document_index` method.
         """
 
         self.log.info("writing document index files")
@@ -159,7 +175,7 @@ class OutputRenderer(object):
 
             if len(parents) > 0:
                 doc_id = ".".join(parents)
-                self.log.debug("    %s" % doc_id)
+                # self.log.debug("    %s" % doc_id)
                 if doc_id not in m:
                     self.render_document_index(m, doc_id, node, prev=prev)
 
@@ -172,6 +188,9 @@ class OutputRenderer(object):
             walk(module, module.tree, [])
 
     def documents(self):
+        """
+        Writes all the individual documents.
+        """
         self.log.info("writing document templates")
         for ns, module in self.cs.db.modules.iteritems():
             assert isinstance(module, DocumentationModule)
@@ -204,6 +223,10 @@ class OutputRenderer(object):
                                      level=1)
 
     def hashtags(self):
+        """
+        Render the hashtag index and each hashtag page
+
+        """
         self.log.info("Hashtags")
         hashtag_dir = join(self.cs.targ, "hashtag")
         hashtags = sorted(self.cs.db.hashtags.iteritems(),
@@ -221,7 +244,7 @@ class OutputRenderer(object):
         for hashtag, docs in hashtags:
             # out_fn = join(hashtag_dir, hashtag + ".html")
             self.log.debug("  # " + hashtag)
-            bc2 = [(hashtag.title(), hashtag)]
+            bc = [(hashtag.title(), hashtag)]
             idx = Index("Hashtag #" + hashtag)
             for d in docs:
                 idx += Index.Entry(d.title,
@@ -233,4 +256,15 @@ class OutputRenderer(object):
                               hashtag_dir,
                               target_fn=hashtag,
                               namespace="hashtag",
-                              breadcrum=bc2)
+                              breadcrum=bc)
+
+    def output(self):
+        """
+        The main method of this part, the ordering is important.
+        """
+        self.log.info("rendering into %s" % self.cs.targ)
+        self.copy_static_files()
+        self.main_index()
+        self.document_indices()
+        self.documents()
+        self.hashtags()
