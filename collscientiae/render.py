@@ -91,38 +91,37 @@ class OutputRenderer(object):
         idx = Index(mytitle(module.namespace))
         for key, node in cur_node.iteritems():
 
-            type = "dir" if len(node) > 0 else "file"
-            sort = 0.0
-            group = title = descr = None
             if doc_id is None:
                 docid = key
             else:
                 docid = doc_id + "." + key
-            if type == "file":
+
+            if docid in module:
+                # there is a document, i.e. type "file"
                 doc = module[docid]
-                descr = doc.subtitle
-                title = doc.title
-                sort = doc.sort
-                group = doc.group
-            elif type == "dir":
-                descr = None
-                title = node.title or mytitle(key)
-                sort = node.sort or 0.0
-            else:
-                assert "No case %s" % type
-            idx += Index.Entry(title,
-                               docid,
-                               group=group,
-                               type=type,
-                               description=descr,
-                               node=node,
-                               sort=sort)
+                idx += Index.Entry(doc.title,
+                                   docid,
+                                   group=doc.group,
+                                   type="file",
+                                   description=doc.subtitle,
+                                   node=node,
+                                   sort=doc.sort)
+
+            if len(node) > 0:
+                # we have a "dir" directory
+                idx += Index.Entry(node.title or mytitle(key),
+                                   docid,
+                                   group=None,
+                                   type="dir",
+                                   description=None,
+                                   node=node,
+                                   sort=node.sort or 0.0)
 
         # this is separate from above in order to obey the "sort" ordering
         for entry in idx:
             node = entry.node
             docid = entry.docid
-            if len(node) == 0:  # it's a document, set prev/next
+            if docid in module:  # it's a document, set prev/next
                 this = module[docid]
                 if prev is not None:
                     this.prev = prev
@@ -136,19 +135,23 @@ class OutputRenderer(object):
             first.prev = this
             this.next = first
 
-        bc = []
         if doc_id is None:
+            # This is the "root" case
             fn = "index"
+            self.render_index(idx,
+                              doc_dir,
+                              target_fn=fn,
+                              namespace=ns)
         else:
             fn = doc_id + ".index"
             bc = module.mk_breadcrum(ns, doc_id)
             idx.title = " - ".join(mytitle(_[0]) for _ in reversed(bc)) + " - " + idx.title
 
-        self.render_index(idx,
-                          doc_dir,
-                          target_fn=fn,
-                          namespace=ns,
-                          breadcrum=bc)
+            self.render_index(idx,
+                              doc_dir,
+                              target_fn=fn,
+                              namespace=ns,
+                              breadcrum=bc)
 
     def main_index(self):
         index_fn = join(self.cs.targ, "index.html")
@@ -179,8 +182,7 @@ class OutputRenderer(object):
             if len(parents) > 0:
                 doc_id = ".".join(parents)
                 # self.log.debug("    %s" % doc_id)
-                if doc_id not in m:
-                    self.render_document_index(m, doc_id, node, prev=prev)
+                self.render_document_index(m, doc_id, node, prev=prev)
 
         # this ordering is important for the prev/next chaining of documents (!)
         for ns in self.cs.config["modules"]:

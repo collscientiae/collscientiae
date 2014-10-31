@@ -127,6 +127,8 @@ class CollScientiae(object):
             self.j2env.globals.update(mod_config)
             self.db.register_module(module)
 
+            self.log.debug("processing: {}".format(module))
+
             for path, _, filenames in sorted(walk(doc_dir)):
                 # self.log.debug("DOCID: %s" % docid)
                 for fn in sorted(filenames):
@@ -150,7 +152,7 @@ class CollScientiae(object):
         self.log.info("building db from '%s'" % self.src)
 
         for module, filepath, docid, md_raw in self.get_documents():
-            self.log.debug("processing: {} / {}".format(module, docid))
+            # self.log.debug("processing: {} / {}".format(module, docid))
             try:
                 ns = module.namespace
                 doc = Document(docid=docid,
