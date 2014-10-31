@@ -82,6 +82,11 @@ class DocumentationModule(object):
         self.tree = DocumentationModule.Node()
 
     def __getitem__(self, key):
+        """
+
+        :type key: basestring
+        :rtype: Document
+        """
         assert key in self._documents,\
             "Document '%s' does not exist in module '%s'" % (key, self.namespace)
 

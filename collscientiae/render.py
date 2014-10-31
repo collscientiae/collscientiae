@@ -79,6 +79,7 @@ class OutputRenderer(object):
     def render_document_index(self, module, doc_id, cur_node, prev=None):
         """
 
+        :type module: DocumentationModule
         :param module:
         :param doc_id:
         :param cur_node:
