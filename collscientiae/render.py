@@ -121,12 +121,13 @@ class OutputRenderer(object):
 
         # this is separate from above in order to obey the "sort" ordering
         for entry in idx:
-            node = entry.node
             docid = entry.docid
             if docid in module:  # it's a document, set prev/next
                 this = module[docid]
                 if prev is not None:
-                    this.prev = prev
+                    # there is a tricky special case, where one node is a file and a dir
+                    # then we don't want to have a backlink to itself.
+                    this.prev = this.prev or prev
                     prev.next = this
                 else:
                     first = this
