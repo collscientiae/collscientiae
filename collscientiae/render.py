@@ -48,7 +48,8 @@ class OutputRenderer(object):
             output.write(html.encode("utf-8"))
             output.write(b"\n")
 
-    def render_index(self, index, directory, target_fn, namespace=None, breadcrum=None, level=1):
+    def render_index(self, index, directory, target_fn,
+                     module=None, namespace=None, breadcrum=None, level=1):
         """
 
         :param index:
@@ -69,6 +70,7 @@ class OutputRenderer(object):
                              namespace=namespace,
                              breadcrum=breadcrum,
                              entrytypes=Index.Entry.types,
+                             module=module,
                              level=level,
                              index=index)
 
@@ -141,6 +143,7 @@ class OutputRenderer(object):
             self.render_index(idx,
                               doc_dir,
                               target_fn=fn,
+                              module=module,
                               namespace=ns)
         else:
             fn = doc_id + ".index"
@@ -150,6 +153,7 @@ class OutputRenderer(object):
             self.render_index(idx,
                               doc_dir,
                               target_fn=fn,
+                              module=module,
                               namespace=ns,
                               breadcrum=bc)
 
@@ -224,6 +228,7 @@ class OutputRenderer(object):
                                      doc=doc,
                                      seealso=seealso,
                                      backlinks=backlinks,
+                                     module=module,
                                      level=1)
 
     def hashtags(self):

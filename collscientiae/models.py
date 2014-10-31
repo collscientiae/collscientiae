@@ -67,6 +67,7 @@ class DocumentationModule(object):
         self.name = config.pop("name")
         self.description = config.pop("description")
         self.landing_page = None
+        self.latex_macros = None
         if "landing_page" in config:
             self.landing_page = config.pop("landing_page")
         assert "path" not in config
