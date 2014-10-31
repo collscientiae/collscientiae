@@ -112,7 +112,7 @@ class DocumentationModule(object):
     def __str__(self):
         return "Module {}".format(self.name)
 
-    def mk_breadcrum(self, ns, docid, title=None):
+    def mk_breadcrumb(self, ns, docid, title=None):
         ret = []
         ids = docid.split(".")
         node = self.tree
@@ -240,7 +240,7 @@ class Index(object):
         def __init__(self, title, docid,
                      group=None, description=None, type="file", sort=None, node=None, prefix=0):
             assert type in Index.Entry.types
-            self.title = title
+            self.title = title if len(title) > 0 else "[%s]" % docid
             self.group = group
             self.docid = docid
             self.description = description

@@ -49,16 +49,18 @@ class OutputRenderer(object):
             output.write(b"\n")
 
     def render_index(self, index, directory, target_fn,
-                     module=None, namespace=None, breadcrum=None, level=1):
+                     module=None, namespace=None, breadcrumb=None, level=1):
         """
 
+
+        :type index: Index
         :param index:
         :param directory:
         :param target_fn:
         :param namespace:
-        :param breadcrum:
+        :param breadcrumb:
         :param level:
-        :return:
+        :return: None
         """
         assert isinstance(index, Index)
         if not exists(directory):
@@ -68,7 +70,7 @@ class OutputRenderer(object):
                              index_fn,
                              title=index.title,
                              namespace=namespace,
-                             breadcrum=breadcrum,
+                             breadcrumb=breadcrumb,
                              entrytypes=Index.Entry.types,
                              module=module,
                              level=level,
@@ -148,7 +150,7 @@ class OutputRenderer(object):
                               namespace=ns)
         else:
             fn = doc_id + ".index"
-            bc = module.mk_breadcrum(ns, doc_id)
+            bc = module.mk_breadcrumb(ns, doc_id)
             idx.title = " - ".join(mytitle(_[0]) for _ in reversed(bc)) + " - " + idx.title
 
             self.render_index(idx,
@@ -156,7 +158,7 @@ class OutputRenderer(object):
                               target_fn=fn,
                               module=module,
                               namespace=ns,
-                              breadcrum=bc)
+                              breadcrumb=bc)
 
     def main_index(self):
         index_fn = join(self.cs.targ, "index.html")
@@ -218,13 +220,13 @@ class OutputRenderer(object):
                 except AssertionError as ex:
                     raise Exception("Error while processing 'seealso' in '{}/{}': \"{}\""
                                     .format(ns, key, ex.message))
-                bc = module.mk_breadcrum(key, doc.docid, doc.title)
+                bc = module.mk_breadcrumb(key, doc.docid, doc.title)
                 title = " - ".join(mytitle(_[0]) for _ in reversed(bc))
                 title += " - " + mytitle(ns)
                 self.render_template("document.html",
                                      out_fn,
                                      namespace=ns,
-                                     breadcrum=bc,
+                                     breadcrumb=bc,
                                      title=title,
                                      doc=doc,
                                      seealso=seealso,
@@ -266,7 +268,7 @@ class OutputRenderer(object):
                               hashtag_dir,
                               target_fn=hashtag,
                               namespace="hashtag",
-                              breadcrum=bc)
+                              breadcrumb=bc)
 
     def output(self):
         """
