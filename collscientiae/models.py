@@ -7,7 +7,7 @@ from .utils import indexsort
 from .db import DuplicateDocumentError
 
 namespace_pattern = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]+$")
-id_pattern = re.compile(r"^[a-zA-Z0-9_.]+$")
+id_pattern = re.compile(r"^[a-zA-Z0-9_.-]+$")
 
 
 class YAMLObjectCallingInit(yaml.YAMLObject):
@@ -120,6 +120,7 @@ class DocumentationModule(object):
             part_id = '.'.join(ids[:level + 1])
             if level < len(ids) - 1:
                 n = node.title or name.title()
+                part_id += ".index"
             else:
                 n = title or node.title or ids[-1].title()
             ret.append((n, part_id))
@@ -142,7 +143,8 @@ class Document(object):
     allowed_types = ["document", "tutorial", "example", "reference"]
 
     def __init__(self, docid, md_raw, ns, src_fn):
-        assert docid is not None and id_pattern.match(docid)
+        assert docid is not None and id_pattern.match(docid),\
+            "docid: '%s'" % docid
         self.docid = docid
         self._ns = ns
         self.md_raw = md_raw
@@ -249,7 +251,10 @@ class Index(object):
         @property
         def href(self):
             h = ''.join(["../"] * self.prefix)
-            return h + self.docid
+            h += self.docid
+            if self.type == "dir":
+                h += ".index"
+            return h
 
     def __init__(self, title):
         self.title = title

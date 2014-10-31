@@ -372,14 +372,18 @@ class ContentProcessor(object):
         assert isinstance(document, Document)
         self.document = document
         html = self.md.convert(document.md_raw)
-        html = """{% include "macros.html" %}\n""" + html
-        html = self.j2env.from_string(html).render()
-        # print html
+        html = '\n'.join(
+            ["""{% include "macros.html" %}""", html])
+        try:
+            html = self.j2env.from_string(html).render(namespace=document.namespace)
+        except Exception as e:
+            print html
+            raise e
         meta = self.get_metadata()
 
         self.doc_root_hash.update(html.encode("utf8"))
-        metafixed = [(k, tuple(v) if isinstance(v, list) else v)
-                     for k, v in meta.iteritems()]
-        self.doc_root_hash.update(str(frozenset(metafixed)))
+        meta_frozen = [(k, tuple(v) if isinstance(v, list) else v)
+                       for k, v in meta.iteritems()]
+        self.doc_root_hash.update(str(frozenset(meta_frozen)))
 
         return html, meta

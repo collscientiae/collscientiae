@@ -130,10 +130,12 @@ class CollScientiae(object):
             for path, _, filenames in sorted(walk(doc_dir)):
                 # self.log.debug("DOCID: %s" % docid)
                 for fn in sorted(filenames):
-                    if fn == "config.yaml":
+                    if fn in [ "config.yaml", ".git", "README.md"]:
                         continue
                     filepath = join(path, fn)
                     basename, ext = splitext(fn)
+                    if ext != ".md":
+                        continue
                     assert ext == ".md", \
                         'fn: {0} (splitext: {1})'.format(fn, ext)
                     # self.log.debug("RELPATH: %s" % relpath(path, doc_dir))

@@ -81,6 +81,7 @@ class OutputRenderer(object):
         :param prev:
         :return:
         """
+        self.log.debug("  I %s/%s -> %s" % (module.name, doc_id, cur_node.keys()))
         assert isinstance(cur_node, DocumentationModule.Node)
         assert all(_.sort is not None for _ in cur_node.values())
         assert isinstance(module, DocumentationModule)
@@ -130,14 +131,16 @@ class OutputRenderer(object):
                     first = this
                 prev = this
 
-        first.prev = this
-        this.next = first
+        # we have to check for None, because there could be directories only!
+        if first is not None:
+            first.prev = this
+            this.next = first
 
         bc = []
         if doc_id is None:
             fn = "index"
         else:
-            fn = doc_id
+            fn = doc_id + ".index"
             bc = module.mk_breadcrum(ns, doc_id)
             idx.title = " - ".join(mytitle(_[0]) for _ in reversed(bc)) + " - " + idx.title
 
@@ -183,7 +186,6 @@ class OutputRenderer(object):
         for ns in self.cs.config["modules"]:
             module = self.cs.db.modules[ns]
             assert isinstance(module, DocumentationModule)
-            self.log.debug("  I %s" % module.name)
             self.render_document_index(module, None, module.tree)
             walk(module, module.tree, [])
 
