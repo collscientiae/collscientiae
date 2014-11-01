@@ -169,14 +169,15 @@ class Document(object):
         self.authors = None
         self.tags = None
         self.group = None
+        self.copyright = None
         self.sort = 0.0
         # pointers to next/previous documents for links on the website
         self.prev = self.next = None
 
     def update(self, output, title=None, authors=None,
                subtitle=None, abstract=None,
-               tags=None, type=None, group=None,
-               seealso=None, sort=None):
+               tags=None, type=None, group=None, date=None,
+               seealso=None, copyright=None, sort=None):
         assert type and type in Document.allowed_types,\
             "type is '%s'" % type
         self.type = type
@@ -187,6 +188,9 @@ class Document(object):
         # output contains html (or latex) after processing the content
         self.output = output
         self.authors = authors
+        self.copyright = copyright
+        from dateutil import parser
+        self.date = parser.parse(date) if date else None
         if sort:
             self.sort = float(sort)
 
