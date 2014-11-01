@@ -166,7 +166,7 @@ class OutputRenderer(object):
         title = self.cs.config["title"]
         self.render_template("index_modules.html",
                              index_fn,
-                             title=title,
+                             breadcrumb=[(title, "index")],
                              # modules are ordered like in the config file, OrderedDict!
                              modules=self.cs.db.modules.values())
 
