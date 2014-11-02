@@ -1,4 +1,4 @@
-# Collectio Scientiam - Collection of Knowledge
+# Collectio Scientiae - Collection of Knowledge
 
 This is an experimental new way to create a documentation.
 
