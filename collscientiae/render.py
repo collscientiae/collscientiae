@@ -19,19 +19,27 @@ class OutputRenderer(object):
         """
         self.log.info("copying static files")
         ignored_static_files = [".scss", ".sass"]
-        for dir in ["static", "img"]:
-            static_dir = join(self.cs.tmpl_dir, dir)
-            target_dir = join(self.cs.targ, dir)
-            makedirs(target_dir)
-            for path, _, filenames in walk(static_dir):
-                for fn in filenames:
-                    if fn.startswith("_") or splitext(fn)[-1] in ignored_static_files:
-                        continue
-                    filepath = join(path, fn)
-                    relative = relpath(path, static_dir)
-                    targetpath = normpath(join(target_dir, relative, fn))
-                    self.log.debug("link %s -> %s" % (join(relative, fn), targetpath))
-                    link(filepath, targetpath)
+
+        def copy(src_dir, mod_dir):
+            for dir in ["static", "img"]:
+                static_dir = normpath(join(src_dir, mod_dir, dir))
+                target_dir = normpath(join(self.cs.targ, mod_dir, dir))
+                makedirs(target_dir)
+                for path, _, filenames in walk(static_dir):
+                    for fn in filenames:
+                        if fn.startswith("_") or splitext(fn)[-1] in ignored_static_files:
+                            continue
+                        filepath = join(path, fn)
+                        relative = relpath(path, static_dir)
+                        targetpath = normpath(join(target_dir, relative, fn))
+                        self.log.debug("link %s -> %s" % (join(relative, fn), targetpath))
+                        link(filepath, targetpath)
+
+        # static files from "theme" directory
+        copy(self.cs.tmpl_dir, ".")
+        # static files from each module into each module's subdirectory
+        for mod_dir in self.cs.config["modules"]:
+            copy(self.cs.src, mod_dir)
 
     def render_template(self, template_fn, target_fn, **data):
         """
