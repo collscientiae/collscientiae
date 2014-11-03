@@ -42,6 +42,7 @@ class CollScientiae(object):
         self._src = abspath(normpath(src))
         self._theme = abspath(normpath(theme))
         self._targ = abspath(normpath(targ))
+        self.tmpl_dir = join(self.theme, "src")
         self.config = self.read_config()
 
         if not isdir(self.src):
@@ -51,20 +52,9 @@ class CollScientiae(object):
             raise ValueError("theme must be a directory")
 
         # setting up jinja2
-        self.tmpl_dir = join(self.theme, "src")
-        j2loader = j2.FileSystemLoader(self.tmpl_dir)
-        self.j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
-        config_theme = get_yaml(join(self.theme, "config.yaml"))
-        if config_theme is not None:
-            self.j2env.globals.update(config_theme)
-        self.j2env.globals["footer"] = self.config["footer"]
-        self.j2env.globals["creation_date"] = get_creation_date()
-        self.j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
-        self.j2env.filters["prefix"] = filter_prefix
-        self.j2env.filters["title"] = mytitle
-        self.j2env.filters["indexsort"] = indexsort
+        self.j2env = self.init_jinja2()
 
-        # initializing all the main components
+        # initializing all components
         self.db = CollScientiaeDB(self)
         self.processor = ContentProcessor(self)
         self.renderer = OutputRenderer(self)
@@ -84,6 +74,21 @@ class CollScientiae(object):
     @property
     def theme(self):
         return self._theme
+
+    def init_jinja2(self):
+        from os.path import join
+        j2loader = j2.FileSystemLoader(self.tmpl_dir)
+        j2env = j2.Environment(loader=j2loader, undefined=j2.StrictUndefined)
+        config_theme = get_yaml(join(self.theme, "config.yaml"))
+        if config_theme is not None:
+            j2env.globals.update(config_theme)
+        j2env.globals["footer"] = self.config["footer"]
+        j2env.globals["creation_date"] = get_creation_date()
+        j2env.globals['google_analytics'] = self.config.get('google_analytics', None)
+        j2env.filters["prefix"] = filter_prefix
+        j2env.filters["title"] = mytitle
+        j2env.filters["indexsort"] = indexsort
+        return j2env
 
     def remap_module(self, origin, target):
         """
