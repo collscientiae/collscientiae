@@ -18,7 +18,7 @@ class OutputRenderer(object):
         This copies static files into the output file tree.
         """
         self.log.info("copying static files")
-        ignored_static_files = [".scss", ".sass"]
+        ignored_static_files = [".scss", ".sass", ".css.map"]
 
         def copy(src_dir, mod_dir):
             for dir in ["static", "img"]:
@@ -26,14 +26,17 @@ class OutputRenderer(object):
                 target_dir = normpath(join(self.cs.targ, mod_dir, dir))
                 makedirs(target_dir)
                 for path, _, filenames in walk(static_dir):
+                    relative = relpath(path, static_dir)
+                    targetpath = normpath(join(target_dir, relative))
+                    if not exists(targetpath):
+                        makedirs(targetpath)
                     for fn in filenames:
-                        if fn.startswith("_") or splitext(fn)[-1] in ignored_static_files:
+                        if fn.startswith("_") or any(fn.endswith(_) for _ in ignored_static_files):
                             continue
-                        filepath = join(path, fn)
-                        relative = relpath(path, static_dir)
-                        targetpath = normpath(join(target_dir, relative, fn))
-                        self.log.debug("link %s -> %s" % (join(relative, fn), targetpath))
-                        link(filepath, targetpath)
+                        srcfn = join(path, fn)
+                        targetfn = join(targetpath, fn)
+                        self.log.debug("link %s -> %s" % (join(relative, fn), targetfn))
+                        link(srcfn, targetfn)
 
         # static files from "theme" directory
         copy(self.cs.tmpl_dir, ".")
