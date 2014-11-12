@@ -161,6 +161,7 @@ class OutputRenderer(object):
                               module=module,
                               namespace=ns)
         else:
+            # in this case, we have a doc_id and create a "virtual" docid.index document
             fn = doc_id + ".index"
             bc = module.mk_breadcrumb(ns, doc_id)
             idx.title = " - ".join(mytitle(_[0]) for _ in reversed(bc)) + " - " + idx.title
@@ -191,6 +192,10 @@ class OutputRenderer(object):
         self.log.info("writing document index files")
 
         def walk(m, node, parents, depth=0, prev=None):
+            """
+            simple recursive walker, going through the nodes in the document tree.
+            the main purpose is to call the :func:`.render_document_index`.
+            """
             assert isinstance(m, DocumentationModule)
             # print "  " * depth, "+", key, "INDEX" if len(node) > 0 else "LEAF"
 
@@ -231,7 +236,7 @@ class OutputRenderer(object):
                 try:
                     seealso = [module[_] for _ in doc.seealso]
                 except AssertionError as ex:
-                    raise Exception("Error while processing 'seealso' in '{}/{}': \"{}\""
+                    raise Exception("Error while processing 'seealso' in '{}/{}': '{}'"
                                     .format(ns, key, ex.message))
                 bc = module.mk_breadcrumb(key, doc.docid, doc.title)
                 title = " - ".join(mytitle(_[0]) for _ in reversed(bc))
@@ -285,7 +290,8 @@ class OutputRenderer(object):
 
     def output(self):
         """
-        The main method of this part, the ordering is important.
+        The main method of this part, the ordering is not important except for creating
+        directories (and assuming their existence later).
         """
         self.log.info("rendering into %s" % self.cs.targ)
         self.copy_static_files()

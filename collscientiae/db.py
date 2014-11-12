@@ -14,7 +14,7 @@ class CollScientiaeDB(object):
     def __init__(self, collscientiae):
         self.log = collscientiae.log
 
-        # would be cooler if these two are in DocumentationModule, but
+        # would be cooler if these three are in DocumentationModule, but
         # it can happen that the link exists before the module exists - TODO
         # maps a hashtag to list of documents
         self.hashtags = defaultdict(set)
