@@ -137,7 +137,7 @@ class CollScientiae(object):
             for path, _, filenames in sorted(walk(doc_dir)):
                 # self.log.debug("DOCID: %s" % docid)
                 for fn in sorted(filenames):
-                    if fn in [ "config.yaml", ".git", "README.md"]:
+                    if fn in ["config.yaml", ".git", "README.md"]:
                         continue
                     filepath = join(path, fn)
                     basename, ext = splitext(fn)
@@ -154,6 +154,10 @@ class CollScientiae(object):
                     yield module, filepath, docid, get_markdown(filepath)
 
     def process(self):
+        """
+        This step iterates through all documents, calls the conversion operation,
+        and registers the generated document in the database.
+        """
         self.log.info("building db from '%s'" % self.src)
 
         for module, filepath, docid, md_raw in self.get_documents():
@@ -173,12 +177,14 @@ class CollScientiae(object):
                 m = "{:s} in {:s}".format(dde.message, filepath)
                 raise DuplicateDocumentError(m)
 
+        self.db.resolve_forwardlinks()
+
         # after we know all the output, this hash contains everything
         self.j2env.globals["doc_root_hash"] = self.processor.get_root_hash()
 
     def read_node_config(self):
         """
-        This goes through the nodes and reads the optinally existing config.yaml
+        This goes through the nodes and reads the optionally existing config.yaml
         to set title and sort priority.
         """
         from os.path import sep, exists

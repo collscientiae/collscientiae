@@ -20,6 +20,7 @@ class CollScientiaeDB(object):
         self.hashtags = defaultdict(set)
         # sets of backlinks (from string to document)
         self.backlinks = defaultdict(set)
+        self.forwardlinks = defaultdict(set)
         self.knowls = defaultdict(set)
 
         # maps all module namespaces to modules
@@ -80,6 +81,19 @@ class CollScientiaeDB(object):
 
     def register_link(self, ns, link_id, document):
         # don't register links to itself
+        self.forwardlinks[document].add((ns, link_id))
         if document.namespace == ns and document.docid == link_id:
             return
         self.backlinks[(ns, link_id)].add(document)
+
+    def resolve_forwardlinks(self):
+        """
+        This must be only called once, after processing all documents.
+        All forwardlinks are resolved to the actual documents.
+        """
+        fwl = defaultdict(set)
+        for doc, entries in self.forwardlinks.iteritems():
+            for (ns, link_id) in entries:
+                target_doc = self.modules[ns][link_id]
+                fwl[doc].add(target_doc)
+        self.forwardlinks = fwl

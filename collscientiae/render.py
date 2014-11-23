@@ -89,6 +89,9 @@ class OutputRenderer(object):
 
     def render_document_index(self, module, doc_id, cur_node, prev=None):
         """
+        This creates all the indices. In particular, the :class:`.Index` holds
+        all the information for creating the index, but some special care must be taken,
+        which type of entry it is.
 
         :type module: DocumentationModule
         :param module:
@@ -134,6 +137,7 @@ class OutputRenderer(object):
                                    sort=node.sort or 0.0)
 
         # this is separate from above in order to obey the "sort" ordering
+        # when settng the prev/next pointers
         for entry in idx:
             docid = entry.docid
             if docid in module:  # it's a document, set prev/next
@@ -147,6 +151,7 @@ class OutputRenderer(object):
                     first = this
                 prev = this
 
+        # close the prev/next to a loop
         # we have to check for None, because there could be directories only!
         if first is not None:
             first.prev = this
@@ -232,6 +237,7 @@ class OutputRenderer(object):
                 out_src_fn = join(doc_dir, doc.docid + ".txt")
                 link(doc.src_fn, out_src_fn)
                 backlinks = self.cs.db.backlinks[(module.namespace, key)]
+                forwardlinks = self.cs.db.forwardlinks[doc]
                 self.log.debug("  + %s" % out_fn)
                 try:
                     seealso = [module[_] for _ in doc.seealso]
@@ -249,6 +255,7 @@ class OutputRenderer(object):
                                      doc=doc,
                                      seealso=seealso,
                                      backlinks=backlinks,
+                                     forwardlinks=forwardlinks,
                                      module=module,
                                      level=1)
 
