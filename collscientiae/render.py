@@ -108,7 +108,7 @@ class OutputRenderer(object):
         ns = module.namespace
         doc_dir = join(self.cs.targ, ns.lower())
         idx = Index(mytitle(module.namespace))
-        for key, node in cur_node.iteritems():
+        for key, node in cur_node.items():
 
             if doc_id is None:
                 docid = key
@@ -130,7 +130,6 @@ class OutputRenderer(object):
                 # we have a "dir" directory
                 idx += Index.Entry(node.title or mytitle(key),
                                    docid,
-                                   group=None,
                                    type="dir",
                                    description=None,
                                    node=node,
@@ -204,7 +203,7 @@ class OutputRenderer(object):
             assert isinstance(m, DocumentationModule)
             # print "  " * depth, "+", key, "INDEX" if len(node) > 0 else "LEAF"
 
-            for key, node2 in sorted(node.iteritems()):
+            for key, node2 in sorted(node.items()):
                 p = parents[:]
                 p.append(key)
                 walk(m, node2, p, depth=depth + 1, prev=prev)
@@ -226,12 +225,12 @@ class OutputRenderer(object):
         Writes all the individual documents.
         """
         self.log.info("writing document templates")
-        for ns, module in self.cs.db.modules.iteritems():
+        for ns, module in self.cs.db.modules.items():
             assert isinstance(module, DocumentationModule)
             doc_dir = join(self.cs.targ, ns.lower())
             # makedirs(doc_dir)
 
-            for key, doc in module.iteritems():
+            for key, doc in module.items():
                 assert isinstance(doc, Document)
                 out_fn = join(doc_dir, doc.docid + ".html")
                 out_src_fn = join(doc_dir, doc.docid + ".txt")
@@ -266,7 +265,7 @@ class OutputRenderer(object):
         """
         self.log.info("Hashtags")
         hashtag_dir = join(self.cs.targ, "hashtag")
-        hashtags = sorted(self.cs.db.hashtags.iteritems(),
+        hashtags = sorted(self.cs.db.hashtags.items(),
                           key=lambda _: _[0])
 
         idx = Index("Hashtag Index")

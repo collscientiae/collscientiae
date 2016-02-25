@@ -38,9 +38,9 @@ class CollScientiaeDB(object):
     def check_consistency(self):
         from .models import Document
         self.log.info("checking consistency")
-        for ns, module in self.modules.iteritems():
+        for ns, module in self.modules.items():
             # titles = {}
-            for key, doc in module.iteritems():
+            for key, doc in module.items():
                 assert isinstance(doc, Document)
                 assert doc.namespace == ns
                 # assert doc.title not in titles, \
@@ -55,11 +55,11 @@ class CollScientiaeDB(object):
                         "There is the document {}/{} with the docid ending in '{}'!"\
                         .format(key, doc, level)
 
-        # for ht, ids in self.hashtags.iteritems():
+        # for ht, ids in self.hashtags.items():
         # self.log.debug("  #%s -> %s" % (ht, ids))
 
         for links in [self.backlinks, self.knowls]:
-            for (ns, docid), docs in links.iteritems():
+            for (ns, docid), docs in links.items():
                 assert ns in self.modules,\
                     "illegal namespace '{}' in a knowl or link to {}".format(ns, docs)
                 assert docid in self.modules[ns],\
@@ -92,7 +92,7 @@ class CollScientiaeDB(object):
         All forwardlinks are resolved to the actual documents.
         """
         fwl = defaultdict(set)
-        for doc, entries in self.forwardlinks.iteritems():
+        for doc, entries in self.forwardlinks.items():
             for (ns, link_id) in entries:
                 target_doc = self.modules[ns][link_id]
                 fwl[doc].add(target_doc)

@@ -106,8 +106,8 @@ class DocumentationModule(object):
         for level in docid.split("."):
             node = node[level]
 
-    def iteritems(self):
-        return self._documents.iteritems()
+    def items(self):
+        return self._documents.items()
 
     def keys(self):
         return self._documents.keys()
@@ -169,7 +169,7 @@ class Document(object):
         self.output = None
         self.authors = None
         self.tags = None
-        self.group = None
+        self.group = "default"
         self.copyright = None
         self.sort = 0.0
         # pointers to next/previous documents for links on the website
@@ -177,7 +177,7 @@ class Document(object):
 
     def update(self, output, title=None, authors=None,
                subtitle=None, abstract=None,
-               tags=None, type=None, group=None, date=None,
+               tags=None, type=None, group="default", date=None,
                seealso=None, copyright=None, sort=None):
         assert type and type in Document.allowed_types,\
             "type is '%s'" % type
@@ -248,7 +248,7 @@ class Index(object):
         types = ("dir", "file", "hashtag")
 
         def __init__(self, title, docid,
-                     group=None, description=None, type="file", sort=None, node=None, prefix=0):
+                     group="default", description=None, type="file", sort=None, node=None, prefix=0):
             assert type in Index.Entry.types
             self.title = title if len(title) > 0 else "[%s]" % docid
             self.group = group

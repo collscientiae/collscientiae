@@ -76,7 +76,7 @@ class LinkedDocument(markdown.inlinepatterns.Pattern):
             self.target_ns = self.cp.document.namespace
         self.target_ns = self.cp.cs.remap_module(self.cp.document.namespace, self.target_ns)
 
-        assert document_id_pattern.match(self.doc_id), "Document ID '%s' invalid" % doc_id
+        assert document_id_pattern.match(self.doc_id), "Document ID '%s' invalid" % self.doc_id
         assert namespace_pattern.match(self.target_ns)
 
     def get_link(self):
@@ -143,7 +143,7 @@ class KnowlPattern(LinkedDocument):
 
 class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor):
 
-    codeblock_pattern = re.compile(r"^(plot|example|python|sage|r)::\s*$", re.IGNORECASE)
+    codeblock_pattern = re.compile(r"^(plot|example|python|sage|r)::\s*(.*)$", re.IGNORECASE)
 
     def __init__(self, parser, cp):
         self.cp = cp
@@ -174,8 +174,8 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             inner = etree.SubElement(outer, 'code')
 
             m = CollScientiaCodeBlockProcessor.codeblock_pattern.match(sibling.text)
-            if m:
-                mode = m.group(1)
+            if m is not None:
+                mode, args = m.groups()
                 if mode == "plot":
                     self.log.warning("codeblock mode 'plot' not yet implemented")
                 elif mode in ["sage", "python", "r"]:
@@ -198,9 +198,8 @@ class CollScientiaCodeBlockProcessor(markdown.blockprocessors.CodeBlockProcessor
             block, theRest = self.detab(block)
             inner.text = AtomicString('%s\n' % block.rstrip())
         if theRest:
-            # This block contained unindented line(s) after the first indented
-            # line. Insert these lines as the first block of the master blocks
-            # list for future processing.
+            # This block contained unindented line(s) after the first indented line.
+            # Insert these lines as the first block of the master blocks list for future processing.
             blocks.insert(0, theRest)
 
     # def run(self, parent, blocks):
@@ -269,44 +268,34 @@ class ContentProcessor(object):
                         #'markdown.extensions.codehilite'
                         ])
 
+        add = md.inlinePatterns.add
+
         # Prevent $..$, $$..$$, \(..\), \[..\] blocks from being processed by Markdown
-        md.inlinePatterns.add('mathjax$', IgnorePattern(r'(?<![\\\$])(\$[^\$].*?\$)'), '<escape')
-        md.inlinePatterns.add('mathjax$$', IgnorePattern(r'(?<![\\])(\$\$.+?\$\$)'), '<escape')
-        md.inlinePatterns.add('mathjax\\(', IgnorePattern(r'(\\\(.+?\\\))'), '<escape')
-        md.inlinePatterns.add('mathjax\\[', IgnorePattern(r'(\\\[.+?\\\])'), '<escape')
+        add('mathjax$', IgnorePattern(r'(?<![\\\$])(\$[^\$].*?\$)'), '<escape')
+        add('mathjax$$', IgnorePattern(r'(?<![\\])(\$\$.+?\$\$)'), '<escape')
+        add('mathjax\\(', IgnorePattern(r'(\\\(.+?\\\))'), '<escape')
+        add('mathjax\\[', IgnorePattern(r'(\\\[.+?\\\])'), '<escape')
 
         # double '' for ASCIIMath (double backtick `` is <code>)
-        md.inlinePatterns.add('mathjax``',
-                              IgnorePattern(r'(?<![\\`])(``.+?``)'),
-                              '<escape')
+        add('mathjax``', IgnorePattern(r'(?<![\\`])(``.+?``)'), '<escape')
 
         # Tell markdown to turn hashtags into search urls
         hashtag_keywords_rex = r'#([a-zA-Z][a-zA-Z0-9-_]{1,})\b'
-        md.inlinePatterns.add('hashtag',
-                              HashTagPattern(hashtag_keywords_rex, self),
-                              '<escape')
+        add('hashtag', HashTagPattern(hashtag_keywords_rex, self), '<escape')
 
         hashtag_keywords_rex2 = r'#\[([a-zA-Z][a-zA-Z0-9-_]{1,})\s+([^\]]+)\]'
-        md.inlinePatterns.add('hashtag2',
-                              HashTagPattern(hashtag_keywords_rex2, self),
-                              '<escape')
+        add('hashtag2', HashTagPattern(hashtag_keywords_rex2, self), '<escape')
 
         # Tells markdown to process "wikistyle" links with optional title
         link_regex = r'link\[([^\]]+)\]'
-        md.inlinePatterns.add('linktag',
-                              LinkPattern(link_regex, self),
-                              '<escape')
+        add('linktag', LinkPattern(link_regex, self), '<escape')
 
         # Tells markdown to process "wikistyle" knowosl with optional title
         knowl_regex = r'knowl\[([^\]]+)\]'
-        md.inlinePatterns.add('knowltag',
-                              KnowlPattern(knowl_regex, self),
-                              '<escape')
+        add('knowltag', KnowlPattern(knowl_regex, self), '<escape')
 
         include_pattern = r'include\[([^\]]+)\]'
-        md.inlinePatterns.add('includes',
-                              IncludePattern(include_pattern, self),
-                              '<escape')
+        add('includes', IncludePattern(include_pattern, self), '<escape')
 
         # codeblocks with plot:: or example:: prefixes
         md.parser.blockprocessors["code"] = CollScientiaCodeBlockProcessor(md.parser, self)
@@ -377,13 +366,13 @@ class ContentProcessor(object):
         try:
             html = self.j2env.from_string(html).render(namespace=document.namespace)
         except Exception as e:
-            print html
+            print(html)
             raise e
         meta = self.get_metadata()
 
         self.doc_root_hash.update(html.encode("utf8"))
         meta_frozen = [(k, tuple(v) if isinstance(v, list) else v)
-                       for k, v in meta.iteritems()]
-        self.doc_root_hash.update(str(frozenset(meta_frozen)))
+                       for k, v in meta.items()]
+        self.doc_root_hash.update(str(frozenset(meta_frozen)).encode("utf8"))
 
         return html, meta

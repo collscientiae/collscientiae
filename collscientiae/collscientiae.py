@@ -193,7 +193,7 @@ class CollScientiae(object):
         # TODO unify this and make it non-recursive
 
         def walk(node, parents):
-            for key, node2 in node.iteritems():
+            for key, node2 in node.items():
                 if len(node2) > 0:
                     config_fn = sep.join([self.src] + parents + [key, "config.yaml"])
                     if exists(config_fn):
@@ -202,7 +202,7 @@ class CollScientiae(object):
                 p.append(key)
                 walk(node2, p)
 
-        for ns, module in self.db.modules.iteritems():
+        for ns, module in self.db.modules.items():
             walk(module.tree, [ns])
 
     def check_dirs(self):
